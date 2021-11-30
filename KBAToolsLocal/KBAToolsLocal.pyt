@@ -37,7 +37,14 @@ class SpeciesSelectionTool(object):
 
     def getParameterInfo(self):
         """Define parameter definitions"""
-        params = None
+        param_sql = arcpy.Parameter(
+            displayName='Species Name',
+            name='speciesname',
+            datatype='GPSQLExpression',
+            parameterType='Required',
+            direction='Input')
+
+        params = [param_sql]
         return params
 
     def isLicensed(self):
@@ -57,6 +64,8 @@ class SpeciesSelectionTool(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        kbasst = SpeciesSelectionTool.Tool()
+        kbasst.run_tool(parameters, messages)
         return
 
 
