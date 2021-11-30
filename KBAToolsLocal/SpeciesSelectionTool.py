@@ -138,74 +138,17 @@ class Tool:
                                                                           speciesid_sql)
 
                     eo_count = int(arcpy.GetCount_management(eo_polygons).getOutput(0))
-                    arcpy.AddMessage("{} record selected from Species table.".format(eo_count))
+                    arcpy.AddMessage("{} record selected from EO_Polygon table.".format(eo_count))
 
-                    lyr_name = "EO Polygon - Species {}".format(speciesid)
+                    lyr_name = "EO Polygon - SpeciesID {}".format(speciesid)
+                    arcpy.AddMessage(lyr_name)
 
-                    # eo_polygons_lyr = arcpy.management.MakeFeatureLayer(r"SpeciesData\EO_Polygon",
-                    #                                                     lyr_name, speciesid_sql, None,
-                    #                                                     "objectid objectid VISIBLE NONE;"
-                    #                                                     "inputpolygonid inputpolygonid VISIBLE NONE;"
-                    #                                                     "inputdatasetid inputdatasetid VISIBLE NONE;"
-                    #                                                     "speciesid speciesid VISIBLE NONE;"
-                    #                                                     "mindate mindate VISIBLE NONE;"
-                    #                                                     "maxdate maxdate VISIBLE NONE;"
-                    #                                                     "datasetsourceuniqueid datasetsourceuniqueid VISIBLE NONE;"
-                    #                                                     "uri uri VISIBLE NONE;license license VISIBLE NONE;"
-                    #                                                     "coordinatesobscured coordinatesobscured VISIBLE NONE;"
-                    #                                                     "accuracy accuracy VISIBLE NONE;"
-                    #                                                     "eorank eorank VISIBLE NONE;"
-                    #                                                     "individualcount individualcount VISIBLE NONE;"
-                    #                                                     "representationaccuracy representationaccuracy VISIBLE NONE;"
-                    #                                                     "synonymid synonymid VISIBLE NONE;"
-                    #                                                     "globalid globalid VISIBLE NONE;"
-                    #                                                     "created_user created_user VISIBLE NONE;"
-                    #                                                     "created_date created_date VISIBLE NONE;"
-                    #                                                     "last_edited_user last_edited_user VISIBLE NONE;"
-                    #                                                     "last_edited_date last_edited_date VISIBLE NONE;"
-                    #                                                     "globalid_1 globalid_1 VISIBLE NONE;"
-                    #                                                     "origin origin VISIBLE NONE;"
-                    #                                                     "seasonality seasonality VISIBLE NONE;"
-                    #                                                     "subnation subnation VISIBLE NONE;"
-                    #                                                     "eodata eodata VISIBLE NONE;"
-                    #                                                     "gendesc gendesc VISIBLE NONE;"
-                    #                                                     "eorankdesc eorankdesc VISIBLE NONE;"
-                    #                                                     "repaccuracycomment repaccuracycomment VISIBLE NONE;"
-                    #                                                     "confidenceextent confidenceextent VISIBLE NONE;"
-                    #                                                     "confidenceextentdesc confidenceextentdesc VISIBLE NONE;"
-                    #                                                     "surveydate surveydate VISIBLE NONE;"
-                    #                                                     "datasensitivity datasensitivity VISIBLE NONE;"
-                    #                                                     "datasensitivitycat datasensitivitycat VISIBLE NONE;"
-                    #                                                     "idconfirmed idconfirmed VISIBLE NONE;"
-                    #                                                     "eorankdate eorankdate VISIBLE NONE;"
-                    #                                                     "eorankcomments eorankcomments VISIBLE NONE;"
-                    #                                                     "additionalinvneeded additionalinvneeded VISIBLE NONE;"
-                    #                                                     "ownership ownership VISIBLE NONE;"
-                    #                                                     "ownercomments ownercomments VISIBLE NONE;"
-                    #                                                     "dataqcstatus dataqcstatus VISIBLE NONE;"
-                    #                                                     "mapqcstatus mapqcstatus VISIBLE NONE;"
-                    #                                                     "qccomments qccomments VISIBLE NONE;"
-                    #                                                     "eoid eoid VISIBLE NONE;"
-                    #                                                     "sfid sfid VISIBLE NONE;"
-                    #                                                     "descriptor descriptor VISIBLE NONE;"
-                    #                                                     "locator locator VISIBLE NONE;"
-                    #                                                     "mappingcomments mappingcomments VISIBLE NONE;"
-                    #                                                     "digitizingcomments digitizingcomments VISIBLE NONE;"
-                    #                                                     "locuncertaintytype locuncertaintytype VISIBLE NONE;"
-                    #                                                     "locuncertaintydistcls locuncertaintydistcls VISIBLE NONE;"
-                    #                                                     "locuncertaintydistunit locuncertaintydistunit VISIBLE NONE;"
-                    #                                                     "locuseclass locuseclass VISIBLE NONE;"
-                    #                                                     "independentsf independentsf VISIBLE NONE;"
-                    #                                                     "unsuitablehabexcluded unsuitablehabexcluded VISIBLE NONE;"
-                    #                                                     "Shape__Area Shape__Area VISIBLE NONE;"
-                    #                                                     "Shape__Length Shape__Length VISIBLE NONE;"
-                    #                                                     "shape shape VISIBLE NONE"
-                    #                                                     )
+                    # This stuff isn't working, but it also isn't throwing errors
+                    # arcpy.management.MakeFeatureLayer(eo_polygons, lyr_name, speciesid_sql, None)
 
-                    # If this is really a lyr you should be able to print the name
-
-                    eo_polygons_lyr = arcpy.management.MakeFeatureLayer(eo_polygons,
-                                                                        lyr_name, speciesid_sql, None,
+                    # Test 1 - didn't work
+                    eo_polygons_lyr = arcpy.management.MakeFeatureLayer(r"SpeciesData\EO_Polygon",
+                                                                        "layer 1", speciesid_sql, None,
                                                                         "objectid objectid VISIBLE NONE;"
                                                                         "inputpolygonid inputpolygonid VISIBLE NONE;"
                                                                         "inputdatasetid inputdatasetid VISIBLE NONE;"
@@ -263,12 +206,146 @@ class Tool:
                                                                         "Shape__Length Shape__Length VISIBLE NONE;"
                                                                         "shape shape VISIBLE NONE"
                                                                         )
-                    arcpy.AddMessage(eo_polygons_lyr.name)
-                    #arcpy.AddMessage(lyr_name.name)
 
-                    # Add Layer to the TOC
-                    m.addLayer(eo_polygons_lyr, "TOP")
-                    #m.addLayer(lyr_name, "TOP")
+                    # Test 2 - doesn't work
+                    eo_polygons_lyr = arcpy.management.MakeFeatureLayer(eo_polygons,
+                                                                        "layer 2", speciesid_sql, None,
+                                                                        "objectid objectid VISIBLE NONE;"
+                                                                        "inputpolygonid inputpolygonid VISIBLE NONE;"
+                                                                        "inputdatasetid inputdatasetid VISIBLE NONE;"
+                                                                        "speciesid speciesid VISIBLE NONE;"
+                                                                        "mindate mindate VISIBLE NONE;"
+                                                                        "maxdate maxdate VISIBLE NONE;"
+                                                                        "datasetsourceuniqueid datasetsourceuniqueid VISIBLE NONE;"
+                                                                        "uri uri VISIBLE NONE;license license VISIBLE NONE;"
+                                                                        "coordinatesobscured coordinatesobscured VISIBLE NONE;"
+                                                                        "accuracy accuracy VISIBLE NONE;"
+                                                                        "eorank eorank VISIBLE NONE;"
+                                                                        "individualcount individualcount VISIBLE NONE;"
+                                                                        "representationaccuracy representationaccuracy VISIBLE NONE;"
+                                                                        "synonymid synonymid VISIBLE NONE;"
+                                                                        "globalid globalid VISIBLE NONE;"
+                                                                        "created_user created_user VISIBLE NONE;"
+                                                                        "created_date created_date VISIBLE NONE;"
+                                                                        "last_edited_user last_edited_user VISIBLE NONE;"
+                                                                        "last_edited_date last_edited_date VISIBLE NONE;"
+                                                                        "globalid_1 globalid_1 VISIBLE NONE;"
+                                                                        "origin origin VISIBLE NONE;"
+                                                                        "seasonality seasonality VISIBLE NONE;"
+                                                                        "subnation subnation VISIBLE NONE;"
+                                                                        "eodata eodata VISIBLE NONE;"
+                                                                        "gendesc gendesc VISIBLE NONE;"
+                                                                        "eorankdesc eorankdesc VISIBLE NONE;"
+                                                                        "repaccuracycomment repaccuracycomment VISIBLE NONE;"
+                                                                        "confidenceextent confidenceextent VISIBLE NONE;"
+                                                                        "confidenceextentdesc confidenceextentdesc VISIBLE NONE;"
+                                                                        "surveydate surveydate VISIBLE NONE;"
+                                                                        "datasensitivity datasensitivity VISIBLE NONE;"
+                                                                        "datasensitivitycat datasensitivitycat VISIBLE NONE;"
+                                                                        "idconfirmed idconfirmed VISIBLE NONE;"
+                                                                        "eorankdate eorankdate VISIBLE NONE;"
+                                                                        "eorankcomments eorankcomments VISIBLE NONE;"
+                                                                        "additionalinvneeded additionalinvneeded VISIBLE NONE;"
+                                                                        "ownership ownership VISIBLE NONE;"
+                                                                        "ownercomments ownercomments VISIBLE NONE;"
+                                                                        "dataqcstatus dataqcstatus VISIBLE NONE;"
+                                                                        "mapqcstatus mapqcstatus VISIBLE NONE;"
+                                                                        "qccomments qccomments VISIBLE NONE;"
+                                                                        "eoid eoid VISIBLE NONE;"
+                                                                        "sfid sfid VISIBLE NONE;"
+                                                                        "descriptor descriptor VISIBLE NONE;"
+                                                                        "locator locator VISIBLE NONE;"
+                                                                        "mappingcomments mappingcomments VISIBLE NONE;"
+                                                                        "digitizingcomments digitizingcomments VISIBLE NONE;"
+                                                                        "locuncertaintytype locuncertaintytype VISIBLE NONE;"
+                                                                        "locuncertaintydistcls locuncertaintydistcls VISIBLE NONE;"
+                                                                        "locuncertaintydistunit locuncertaintydistunit VISIBLE NONE;"
+                                                                        "locuseclass locuseclass VISIBLE NONE;"
+                                                                        "independentsf independentsf VISIBLE NONE;"
+                                                                        "unsuitablehabexcluded unsuitablehabexcluded VISIBLE NONE;"
+                                                                        "Shape__Area Shape__Area VISIBLE NONE;"
+                                                                        "Shape__Length Shape__Length VISIBLE NONE;"
+                                                                        "shape shape VISIBLE NONE"
+                                                                        )
+
+                    # Test 3
+                    eo_polygons_lyr = arcpy.management.MakeFeatureLayer("https://gis.natureserve.ca/arcgis/rest/services/EO_Polygons/FeatureServer/0",
+                                                                        "layer 3", speciesid_sql, None,
+                                                                        "objectid objectid VISIBLE NONE;"
+                                                                        "inputpolygonid inputpolygonid VISIBLE NONE;"
+                                                                        "inputdatasetid inputdatasetid VISIBLE NONE;"
+                                                                        "speciesid speciesid VISIBLE NONE;"
+                                                                        "mindate mindate VISIBLE NONE;"
+                                                                        "maxdate maxdate VISIBLE NONE;"
+                                                                        "datasetsourceuniqueid datasetsourceuniqueid VISIBLE NONE;"
+                                                                        "uri uri VISIBLE NONE;license license VISIBLE NONE;"
+                                                                        "coordinatesobscured coordinatesobscured VISIBLE NONE;"
+                                                                        "accuracy accuracy VISIBLE NONE;"
+                                                                        "eorank eorank VISIBLE NONE;"
+                                                                        "individualcount individualcount VISIBLE NONE;"
+                                                                        "representationaccuracy representationaccuracy VISIBLE NONE;"
+                                                                        "synonymid synonymid VISIBLE NONE;"
+                                                                        "globalid globalid VISIBLE NONE;"
+                                                                        "created_user created_user VISIBLE NONE;"
+                                                                        "created_date created_date VISIBLE NONE;"
+                                                                        "last_edited_user last_edited_user VISIBLE NONE;"
+                                                                        "last_edited_date last_edited_date VISIBLE NONE;"
+                                                                        "globalid_1 globalid_1 VISIBLE NONE;"
+                                                                        "origin origin VISIBLE NONE;"
+                                                                        "seasonality seasonality VISIBLE NONE;"
+                                                                        "subnation subnation VISIBLE NONE;"
+                                                                        "eodata eodata VISIBLE NONE;"
+                                                                        "gendesc gendesc VISIBLE NONE;"
+                                                                        "eorankdesc eorankdesc VISIBLE NONE;"
+                                                                        "repaccuracycomment repaccuracycomment VISIBLE NONE;"
+                                                                        "confidenceextent confidenceextent VISIBLE NONE;"
+                                                                        "confidenceextentdesc confidenceextentdesc VISIBLE NONE;"
+                                                                        "surveydate surveydate VISIBLE NONE;"
+                                                                        "datasensitivity datasensitivity VISIBLE NONE;"
+                                                                        "datasensitivitycat datasensitivitycat VISIBLE NONE;"
+                                                                        "idconfirmed idconfirmed VISIBLE NONE;"
+                                                                        "eorankdate eorankdate VISIBLE NONE;"
+                                                                        "eorankcomments eorankcomments VISIBLE NONE;"
+                                                                        "additionalinvneeded additionalinvneeded VISIBLE NONE;"
+                                                                        "ownership ownership VISIBLE NONE;"
+                                                                        "ownercomments ownercomments VISIBLE NONE;"
+                                                                        "dataqcstatus dataqcstatus VISIBLE NONE;"
+                                                                        "mapqcstatus mapqcstatus VISIBLE NONE;"
+                                                                        "qccomments qccomments VISIBLE NONE;"
+                                                                        "eoid eoid VISIBLE NONE;"
+                                                                        "sfid sfid VISIBLE NONE;"
+                                                                        "descriptor descriptor VISIBLE NONE;"
+                                                                        "locator locator VISIBLE NONE;"
+                                                                        "mappingcomments mappingcomments VISIBLE NONE;"
+                                                                        "digitizingcomments digitizingcomments VISIBLE NONE;"
+                                                                        "locuncertaintytype locuncertaintytype VISIBLE NONE;"
+                                                                        "locuncertaintydistcls locuncertaintydistcls VISIBLE NONE;"
+                                                                        "locuncertaintydistunit locuncertaintydistunit VISIBLE NONE;"
+                                                                        "locuseclass locuseclass VISIBLE NONE;"
+                                                                        "independentsf independentsf VISIBLE NONE;"
+                                                                        "unsuitablehabexcluded unsuitablehabexcluded VISIBLE NONE;"
+                                                                        "Shape__Area Shape__Area VISIBLE NONE;"
+                                                                        "Shape__Length Shape__Length VISIBLE NONE;"
+                                                                        "shape shape VISIBLE NONE"
+                                                                        )
+
+                    # Save the project
+                    aprx.save()
+
+                    # Reference the layers from the map
+                    lyr = m.listLayers(lyr_name)[0]
+
+                    group_lyr = m.listLayers("SpeciesData")[0]
+
+                    # Add the layer to an existing group
+                    m.addLayerToGroup(group_lyr, lyr, "TOP")
+
+                    # Move layer in the TOC?
+
+                    # Save the project
+                    aprx.save()
+
+                    arcpy.AddMessage("End of script.")
 
                 elif count > 1:  # Process species & infraspecies
                     arcpy.AddMessage("{} records selected.".format(count))
