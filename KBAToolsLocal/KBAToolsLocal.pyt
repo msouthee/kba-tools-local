@@ -11,11 +11,11 @@
 
 # Import libraries and modules
 import arcpy
-import SpeciesSeletionTool
+import SpeciesSelectionTool
 
 # Reload your module in the Python toolbox
 import importlib
-importlib.reload(SpeciesSeletionTool)
+importlib.reload(SpeciesSelectionTool)
 
 
 # Define Toolbox
@@ -26,11 +26,11 @@ class Toolbox(object):
         self.alias = "KBAToolsLocal"
 
         # List of tool classes associated with this toolbox
-        self.tools = [SpeciesSelectionTool]
+        self.tools = [ToolSpeciesSelection]
 
 
 # Define Species Selection Tool
-class SpeciesSelectionTool(object):
+class ToolSpeciesSelection(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
         self.label = "Species Selection Tool"
@@ -39,32 +39,45 @@ class SpeciesSelectionTool(object):
 
     def getParameterInfo(self):
         """Define parameter definitions"""
+        # # Table and SQL parameter
         param_table = arcpy.Parameter(
-            displayName='Biotics Table (leave blank)',
+            displayName='Biotics Table (already selected for you)',
             name='biotics',
-            datatype='DETable',
+            datatype='GPTableView',
             parameterType='Optional',
             direction='Input')
 
+        # Default table to populate in the tool
+        param_table.value = "BIOTICS_ELEMENT_NATIONAL"
+
         param_sql = arcpy.Parameter(
-            displayName='Species Name',
+            displayName='Species SQL Query (select the species of interest from the dropdown on the right)',
             name='speciesname',
-            datatype='GPSQL',
+            datatype='GPSQLExpression',
             parameterType='Required',
             direction='Input')
 
-        params = [param_table, param_sql]
-        return params
+        # Set the parameter dependency to create an sql expression based on the input table
+        param_sql.parameterDependencies = [param_table.name]
 
-        # param_sql = arcpy.Parameter(
-        #     displayName='Species Name',
-        #     name='speciesname',
-        #     datatype='GPString',
-        #     parameterType='Required',
-        #     direction='Input')
-        #
-        # params = [param_sql]
-        # return params
+        # Default sql query
+        param_sql.value = "national_scientific_name = 'Abronia umbellata'"
+
+        param_infraspecies = arcpy.Parameter(
+            displayName='Do you want to select the full species and infraspecies?',
+            name='infraspecies',
+            datatype='GPString',
+            parameterType='Required',
+            direction='Input')
+
+        # Filter list of available responses
+        param_infraspecies.filter.list = ["Yes", "No"]
+
+        # Default selection
+        param_infraspecies.value = "Yes"
+
+        params = [param_table, param_sql, param_infraspecies]
+        return params
 
     def isLicensed(self):
         """Set whether tool is licensed to execute."""
@@ -83,8 +96,8 @@ class SpeciesSelectionTool(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        kbasst = SpeciesSelectionTool.Tool()
-        kbasst.run_tool(parameters, messages)
+        sst = SpeciesSelectionTool.Tool()
+        sst.run_tool(parameters, messages)
         return
 
 
