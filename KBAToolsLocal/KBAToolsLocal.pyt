@@ -17,6 +17,8 @@ import SpeciesSeletionTool
 import importlib
 importlib.reload(SpeciesSeletionTool)
 
+
+# Define Toolbox
 class Toolbox(object):
     def __init__(self):
         """Define the toolbox (the name of the toolbox is the name of the .pyt file)."""
@@ -26,8 +28,8 @@ class Toolbox(object):
         # List of tool classes associated with this toolbox
         self.tools = [SpeciesSelectionTool]
 
-# UPDATE TOOLS AS DEVELOPMENT CONTINUES
-# Sample Template for Tool
+
+# Define Species Selection Tool
 class SpeciesSelectionTool(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
@@ -37,15 +39,32 @@ class SpeciesSelectionTool(object):
 
     def getParameterInfo(self):
         """Define parameter definitions"""
+        param_table = arcpy.Parameter(
+            displayName='Biotics Table (leave blank)',
+            name='biotics',
+            datatype='DETable',
+            parameterType='Optional',
+            direction='Input')
+
         param_sql = arcpy.Parameter(
             displayName='Species Name',
             name='speciesname',
-            datatype='GPSQLExpression',
+            datatype='GPSQL',
             parameterType='Required',
             direction='Input')
 
-        params = [param_sql]
+        params = [param_table, param_sql]
         return params
+
+        # param_sql = arcpy.Parameter(
+        #     displayName='Species Name',
+        #     name='speciesname',
+        #     datatype='GPString',
+        #     parameterType='Required',
+        #     direction='Input')
+        #
+        # params = [param_sql]
+        # return params
 
     def isLicensed(self):
         """Set whether tool is licensed to execute."""

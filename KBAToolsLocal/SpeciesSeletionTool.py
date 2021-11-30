@@ -24,14 +24,20 @@ class Tool:
 
     def run_tool(self, parameters, messages):
 
-        # Make variables for parameters
-        param_sql = parameters[0].valueAsText
 
         # # Script Parameters
         # param_sql = arcpy.GetParameterAsText(0)
 
-        arcpy.AddMessage(param_sql)
+        # SQL - Make variables for parameters
+        param_table = parameters[0].valueAsText
+        param_sql = parameters[1].valueAsText
 
+
+        # # String - Make variables for parameters
+        # param_sql = parameters[0].valueAsText # this is a string
+        #
+        # arcpy.AddMessage(param_sql)
+        #
         # species_selection_expression = "national_scientific_name = '{}'".format(param_sql)
         #
         # arcpy.AddMessage(species_selection_expression)
@@ -46,13 +52,13 @@ class Tool:
         m.clearSelection()
 
         try:
-            # Select record in BIOTICS table based on the user-specified sql expression
+            # SQL parameter - Select record in BIOTICS table based on the user-specified sql expression
             biotics_record = arcpy.management.SelectLayerByAttribute("BIOTICS_ELEMENT_NATIONAL",
                                                                      "NEW_SELECTION",
                                                                      param_sql,
                                                                      None)
 
-            # # Select record in BIOTICS table based on the user-specified species name
+            # # String parameter - Select record in BIOTICS table based on the user-specified species name
             # biotics_record = arcpy.management.SelectLayerByAttribute("BIOTICS_ELEMENT_NATIONAL",
             #                                                          "NEW_SELECTION",
             #                                                          "{}".format(species_selection_expression),
@@ -84,10 +90,15 @@ if __name__ == '__main__':
     sst = Tool()
 
     # Hard-coded parameters for debugging
+    param_table = arcpy.Parameter()
     param_sql = arcpy.Parameter()
+
+    param_table = "https://gis.natureserve.ca/arcgis/rest/services/EBAR-KBA/Restricted/FeatureServer/4"
+
     # This would be if you make the entire sql query yourself.  Is there a way to just select species as dropdown
     param_sql.value = "national_scientific_name = 'Abronia latifolia'"
-    parameters = [param_sql]
+
+    parameters = [param_table, param_sql]
 
     # Run the tool using the parameters
     sst.run_tool(parameters, None)
