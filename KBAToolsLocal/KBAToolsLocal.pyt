@@ -64,7 +64,8 @@ class ToolSpeciesSelection(object):
         param_sql.value = "national_scientific_name = 'Abronia umbellata'"
 
         param_infraspecies = arcpy.Parameter(
-            displayName='Do you want to select the full species and infraspecies?',
+            displayName='If you selected an infraspecies, do you want to select the full species as well? '
+                        'This toggle will do nothing if you selected a full species.',
             name='infraspecies',
             datatype='GPString',
             parameterType='Required',
