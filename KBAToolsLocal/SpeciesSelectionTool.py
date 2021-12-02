@@ -196,7 +196,8 @@ class Tool:
 
                 # Rename the newly added group layer, because layer was added at top, index reference is still [0]
                 group_lyr = m.listLayers("SpeciesData")[0]
-                group_lyr.name = group_lyr_name
+                group_lyr.name = group_lyr_name  # rename the group layer in TOC
+                group_lyr = m.listLayers(group_lyr_name)[0]
 
                 group_lyr.isVisible = False  # turn off the visibility for the group layer
                 aprx.save()  # save the Pro project
@@ -207,6 +208,23 @@ class Tool:
                 Or do I want to try and manipulate the data that is already loaded in the points/lines/polygons layers?
                 
                 Do you lose the relationships if the data is added fresh? That will influence the decision."""
+
+                # Naming conventions for point/line/polygon layers = InputPoint_SpeciesID
+                point_lyr_name = "InputPoint_{}".format(speciesid)
+                line_lyr_name = "InputLine_{}".format(speciesid)
+                poly_lyr_name = "InputPolygon_{}".format(speciesid)
+                eo_lyr_name = "EO_Polygon_{}".format(speciesid)
+
+                # Process the point layer
+                point_lyr = m.listLayers("InputPoint")[0]
+                # Make a new feature layer with sql query and added .getOutput(0) function
+                new_lyr = arcpy.MakeFeatureLayer_management(point_lyr,
+                                                            point_lyr_name,
+                                                            "speciesid = {}".format(speciesid),
+                                                            None).getOutput(0)
+                # Add the new point layer
+                m.addLayerToGroup(group_lyr, new_lyr, "TOP")
+                m.removeLayer(point_lyr)  # remove old point layer
 
                 # # Iterate through the 4 feature classes and start making data layers
                 # points = arcpy.management.SelectLayerByAttribute(r"SpeciesData\InputPoint",
