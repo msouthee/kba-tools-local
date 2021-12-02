@@ -32,26 +32,28 @@ class Toolbox(object):
 # Define Species Selection Tool
 class ToolSpeciesSelection(object):
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the Species Selection Tool."""
         self.label = "Species Selection Tool"
         self.description = "Use this tool to select all points, lines & polygons for a specific species."
         self.canRunInBackground = False
 
     def getParameterInfo(self):
-        """Define parameter definitions"""
-        # # Table and SQL parameter
+        """Define parameter definitions."""
+
+        # Table parameter. Because parameterType = Derived, this parameter will NOT show up in the Tool dialog window.
         param_table = arcpy.Parameter(
             displayName='Biotics Table (already selected for you)',
             name='biotics',
             datatype='GPTableView',
-            parameterType='Optional',
+            parameterType='Derived',
             direction='Input')
 
         # Default table to populate in the tool
         param_table.value = "BIOTICS_ELEMENT_NATIONAL"
 
+        # SQL parameter
         param_sql = arcpy.Parameter(
-            displayName='Species SQL Query (select the species of interest from the dropdown on the right)',
+            displayName='Select a species:',
             name='speciesname',
             datatype='GPSQLExpression',
             parameterType='Required',
@@ -61,11 +63,12 @@ class ToolSpeciesSelection(object):
         param_sql.parameterDependencies = [param_table.name]
 
         # Default sql query
-        param_sql.value = "national_scientific_name = 'Abronia umbellata'"
+        param_sql.value = "national_scientific_name = 'Abronia latifolia'"
 
+        # Yes/No parameter
         param_infraspecies = arcpy.Parameter(
-            displayName='If you selected an infraspecies, do you want to select the full species as well? '
-                        'This toggle will do nothing if you selected a full species.',
+            displayName='If you selected an infraspecies, do you want to process the full species as well?'
+                        '\n\nNote: If you selected a full species, all infraspecies will be processed by default.',
             name='infraspecies',
             datatype='GPString',
             parameterType='Required',
