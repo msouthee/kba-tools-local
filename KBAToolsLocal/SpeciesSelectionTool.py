@@ -215,7 +215,7 @@ class Tool:
                 poly_lyr_name = "InputPolygon_{}".format(speciesid)
                 eo_lyr_name = "EO_Polygon_{}".format(speciesid)
 
-                # Process the point layer
+                # Process the point layer - THIS WORKS!!!
                 point_lyr = m.listLayers("InputPoint")[0]
                 # Make a new feature layer with sql query and added .getOutput(0) function
                 new_lyr = arcpy.MakeFeatureLayer_management(point_lyr,
