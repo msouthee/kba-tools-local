@@ -13,7 +13,7 @@
 import arcpy
 import sys
 import traceback
-#import exceptions
+import exceptions
 
 
 class Tool:
@@ -53,6 +53,10 @@ class Tool:
             # clear all selections in the map
             m.clearSelection()
 
+            # Guaranteed to exist at run time
+            scratch = arcpy.env.scratchFolder
+            arcpy.AddMessage("Scratch folder: {}".format(scratch))
+
             # Select the record in BIOTICS table based on the user-specified sql expression
             biotics_record = arcpy.management.SelectLayerByAttribute(param_table,
                                                                      "NEW_SELECTION",
@@ -61,19 +65,21 @@ class Tool:
             # INSERT logic to check that only one record is selected in the initial query
             biotics_count = int(arcpy.GetCount_management(biotics_record).getOutput(0))
 
-            # # if count = 0 throw error [read up on this & use custom exception!]
-            # if biotics_count == 0:
-            #     raise exceptions.InputError
-            #
-            # # if count > 1 throw error [read up on this & use custom error!]
-            # if biotics_count > 1:
-            #     raise exceptions.InputError
-            #
-            # # else continue with script
-            # else:
-            #     pass
+            # if count = 0 throw error using custom exception
+            if biotics_count == 0:
+                arcpy.AddMessage("No records selected.")
+                raise exceptions.InputError
 
-            # Get record-level information about the selected record using a search cursor
+            # if count > 1 throw error using custom exception
+            elif biotics_count > 1:
+                arcpy.AddMessage("More than one record selected. Please select only one record.")
+                raise exceptions.InputError
+
+            # else continue with script
+            else:
+                pass
+
+            # Get record-level information about the selected Biotics record using a search cursor
             with arcpy.da.SearchCursor(param_table, biotics_fields, param_sql) as cursor:
                 for row in cursor:
 
@@ -131,7 +137,8 @@ class Tool:
                     count = int(arcpy.GetCount_management(species_records).getOutput(0))
                     arcpy.AddMessage("{} species records selected (infraspecies)".format(count))
 
-                    # Create a search cursor to get the fullspecies_elementcode from the selected infraspecies record
+                    # Create a search cursor for the Species table to get the fullspecies_elementcode
+                    # from the currently selected infraspecies record
                     with arcpy.da.SearchCursor("Species",
                                                ["fullspecies_elementcode"],
                                                "speciesid = {}".format(speciesid)) as species_cursor:
@@ -164,8 +171,42 @@ class Tool:
                 Iterate through the selected species records and create output layers in the map TOC."""
 
             # Check to see how many records are selected in the Species table
+            # If count == 1 then you are only processing the original record selected in BIOTICS
             if count == 1:  # Process single species [WRITE A FUNCTION TO DO THIS PROCESSING]
                 arcpy.AddMessage("{} records selected.".format(count))
+
+                # The information about the species is from the original Biotics record cause count == 1
+                # Naming convention for output group layer: Common Name (Scientific Name)
+                group_lyr_name = "{} ({})".format(common_name, sci_name)
+                arcpy.AddMessage("Processing {} ...".format(group_lyr_name))
+
+                # # NOTE: YOU ONLY WANT TO DO THIS LOGIC ONCE! -------------------------------------------------------
+                # Get the existing SpeciesDate group layer as a layer object
+                group_lyr = m.listLayers("SpeciesData")[0]
+
+                # Write a copy of the SpeciesData group layer to the user's scratch folder
+                arcpy.SaveToLayerFile_management(group_lyr, scratch + "\\species_group.lyrx")
+
+                # Create a layer file from the scratch workspace
+                new_group_lyr = arcpy.mp.LayerFile(scratch + "\\species_group.lyrx")
+                # # END OF NOTE --------------------------------------------------------------------------------------
+
+                # Add the SpeciesData group layer to the TOC
+                m.addLayer(new_group_lyr, "TOP")
+
+                # Rename the newly added group layer, because layer was added at top, index reference is still [0]
+                group_lyr = m.listLayers("SpeciesData")[0]
+                group_lyr.name = group_lyr_name
+
+                group_lyr.isVisible = False  # turn off the visibility for the group layer
+                aprx.save()  # save the Pro project
+
+                """Decide on the logic to process the points/lines/polygons. 
+                
+                Do I want to remove the sub-layers from the renamed group layer and re-add them based on sql queries? 
+                Or do I want to try and manipulate the data that is already loaded in the points/lines/polygons layers?
+                
+                Do you lose the relationships if the data is added fresh? That will influence the decision."""
 
                 # # Iterate through the 4 feature classes and start making data layers
                 # points = arcpy.management.SelectLayerByAttribute(r"SpeciesData\InputPoint",
@@ -186,15 +227,6 @@ class Tool:
                 #
                 # eo_count = int(arcpy.GetCount_management(eo_polygons).getOutput(0))
                 # arcpy.AddMessage("{} record selected from EO_Polygon table.".format(eo_count))
-
-                # # Steps to create a new group layer?? NO, but it works for the individual data layers
-                # group_lyr = m.listLayers("SpeciesData")[0]
-                # lyr_name = "{} - SpeciesID {}".format(group_lyr.name, speciesid)
-                # arcpy.AddMessage(lyr_name)
-                # new_group_lyr = arcpy.MakeFeatureLayer_management(group_lyr, lyr_name).getOutput(0)
-                # m.addLayer(new_group_lyr, "TOP")
-                # new_group_lyr.isVisible = False
-                # aprx.save()
 
                 # # ................................................................................................
                 # # List the existing layer that you want to duplicate
@@ -234,15 +266,15 @@ class Tool:
                 # create a new search cursor & start calling your function to do stuff
 
             else:
-                # Throw an error that there are no species selected.  This will happen if the script logic is wrong.
+                # Throw an error that there are no species selected.  This will only happen if the script logic is wrong
                 arcpy.AddError("{} records selected. Tool script logic is bad."
                                .format(count))
 
             arcpy.AddMessage("End of script.")
 
-        # # Error handling for custom errors [TRY TO FIGURE THIS OUT. MIGHT BE WORKING, RANDAL STOPPED THE SERVICES!]
-        # except exceptions.InputError:
-        #     arcpy.AddError("Incorrect sql statement. Select only one record from Biotics.")
+        # Error handling for custom input error related to the SQL statement
+        except exceptions.InputError:
+            arcpy.AddError("Incorrect sql statement. See Messages for more details.")
 
         # Error handling if an error occurs while using a Geoprocessing Tool in the script
         except arcpy.ExecuteError:
