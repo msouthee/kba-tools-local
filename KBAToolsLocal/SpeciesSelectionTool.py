@@ -170,11 +170,11 @@ class Tool:
                     sci_name = row[3]
                     common_name = row[4]
 
-                    arcpy.AddMessage("\nSpecies ID: {}".format(speciesid))
+                    arcpy.AddMessage("Species ID: {}".format(speciesid))
                     arcpy.AddMessage("Scientific Name: {}".format(sci_name))
                     arcpy.AddMessage("Common Name: {}".format(common_name))
                     arcpy.AddMessage("Species Level: {}".format(s_level))
-                    arcpy.AddMessage("Element Code: {}\n".format(element_code))
+                    arcpy.AddMessage("Element Code: {}".format(element_code))
 
             # Exit the search cursor, but keep the variables from inside the search cursor.
             del row, biotics_cursor
@@ -326,7 +326,10 @@ class Tool:
                 param_infraspecies == "Yes"; or if you select an infraspecies and param_infraspecies == "No".
                 Check to see if there are additional species records to process and create output layers as needed."""
 
-            # METHOD 2 PROCESS THE RECORDS USING THE SPECIESID_LIST
+            # Delete the old variables from the biotics record
+            del speciesid, element_code, s_level, sci_name, common_name
+
+            # PROCESS THE ADDITIONAL RECORDS USING THE SPECIESID_LIST [METHOD 2 - IMPLEMENTED]
             if len(speciesid_list) < 1:
                 arcpy.AddMessage("No additional records to process.")
                 pass  # Do nothing and go to end of script
@@ -334,62 +337,63 @@ class Tool:
             else:
                 # Iterate through the other species records [ONLY IF THE LIST IS MORE THAN ONE RECORD LONG]
                 for s_id in speciesid_list:
-                    # process all records in the list
-                    arcpy.AddMessage("Processing id {} now ...".format(s_id))
+                    # arcpy.AddMessage("Processing id {} now ...".format(s_id))
 
                     # Assign sql query variable related to the current species id in the list
-                    speciesid_sql = "speciesid = {}".format(s_id)
+                    biotics_sql = "speciesid = {}".format(s_id)
+                    arcpy.AddMessage(biotics_sql)
 
-                    # Query biotics to get species information
-                    # Create a search cursor to get species information from the Biotics table
-                    with arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
-                                               biotics_fields,
-                                               speciesid_sql) as biotics_cursor:
+                    # Select the record in Biotics that you want to process
+                    arcpy.SelectLayerByAttribute_management(param_table, "NEW_SELECTION", biotics_sql)
 
-                        for row in biotics_cursor:
-                            # Assign variables from the record based on the list order in biotics_fields variable
-                            speciesid = row[0]
-                            element_code = row[1]
+                    # Query the record in Biotics to get species information using a search cursor
+                    with arcpy.da.SearchCursor(param_table,
+                                               biotics_fields) as new_biotics_cursor:
+
+                        for row in new_biotics_cursor:
+                            arcpy.AddMessage("Processing species id: {}.".format(row[0]))
+
+                            # Assign relevant variables from the biotics record
                             s_level = row[2]
                             sci_name = row[3]
                             common_name = row[4]
 
-                            arcpy.AddMessage("\nSpecies ID: {}".format(speciesid))
                             arcpy.AddMessage("Scientific Name: {}".format(sci_name))
                             arcpy.AddMessage("Common Name: {}".format(common_name))
                             arcpy.AddMessage("Species Level: {}".format(s_level))
-                            arcpy.AddMessage("Element Code: {}\n".format(element_code))
 
-                    # # USE FUNCTIONS TO CREATE GROUP LAYER AND ALL POINTS/LINES/POLY/EOS LAYERS ----------------------
-                    # Create the group layer by calling the create_group_lyr() function
-                    group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name)
-                    aprx.save()  # save the Pro project
+                            # # USE FUNCTIONS TO CREATE GROUP LAYER AND ALL POINTS/LINES/POLY/EOS LAYERS -------------
+                            # Create the group layer by calling the create_group_lyr() function
+                            group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name)
+                            aprx.save()  # save the Pro project
 
-                    # # USE THE SAME FUNCTION TO CREATE ALL POINTS/LINES/EOS
-                    # Create the point layer by calling the create_lyr() function
-                    Tool.create_lyr(m, group_lyr, speciesid, 'InputPoint')
-                    aprx.save()  # save the Pro project
+                            # # USE THE SAME FUNCTION TO CREATE ALL POINTS/LINES/EOS
+                            # Create the point layer by calling the create_lyr() function
+                            Tool.create_lyr(m, group_lyr, speciesid, 'InputPoint')
+                            aprx.save()  # save the Pro project
 
-                    # Create the line layer by calling the create_lyr() function
-                    Tool.create_lyr(m, group_lyr, speciesid, 'InputLine')
-                    aprx.save()  # save the Pro project
+                            # Create the line layer by calling the create_lyr() function
+                            Tool.create_lyr(m, group_lyr, speciesid, 'InputLine')
+                            aprx.save()  # save the Pro project
 
-                    # Create the polygon layer by calling the create_lyr() function
-                    Tool.create_lyr(m, group_lyr, speciesid, 'InputPolygon')
-                    aprx.save()  # save the Pro project
+                            # Create the polygon layer by calling the create_lyr() function
+                            Tool.create_lyr(m, group_lyr, speciesid, 'InputPolygon')
+                            aprx.save()  # save the Pro project
 
-                    # # Create the polygon layer by calling the create_poly_lyr() function [KEEP FOR LATER]
-                    # Tool.create_poly_lyr(m, group_lyr, speciesid)
-                    # aprx.save()  # save the Pro project
+                            # # Create the polygon layer by calling the create_poly_lyr() function [KEEP FOR LATER]
+                            # Tool.create_poly_lyr(m, group_lyr, speciesid)
+                            # aprx.save()  # save the Pro project
 
-                    # Create the eo layer by calling the create_lyr() function
-                    Tool.create_lyr(m, group_lyr, speciesid, 'EO_Polygon')
-                    # Apply symbology to the new EO polygon layer from old layer
-                    arcpy.management.ApplySymbologyFromLayer(
-                        r"{} ({})\EO_Polygon_{}".format(common_name, sci_name, speciesid),
-                        r"SpeciesData\EO_Polygon", None, "MAINTAIN")
+                            # Create the eo layer by calling the create_lyr() function
+                            Tool.create_lyr(m, group_lyr, speciesid, 'EO_Polygon')
+                            # # Apply symbology to the new EO polygon layer from old layer
+                            # arcpy.management.ApplySymbologyFromLayer(
+                            #     r"{} ({})\EO_Polygon_{}".format(common_name, sci_name, speciesid),
+                            #     r"SpeciesData\EO_Polygon", None, "MAINTAIN")
 
-                    aprx.save()  # save the Pro project
+                    aprx.save()  # save the Pro project for the freshly processed species record
+
+                aprx.save()  # save the Pro project after processing all additional species
 
             # # Check to see how many records are selected in the Species table [METHOD 1]
             # # If count == 1 then you are only processing the original record selected in BIOTICS
