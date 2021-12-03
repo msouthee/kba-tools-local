@@ -16,12 +16,6 @@ import traceback
 import exceptions  # this is a custom module
 
 
-# # Naming conventions for point/line/polygon layers = InputPoint_SpeciesID
-# point_lyr_name = "InputPoint_{}".format(speciesid)
-# line_lyr_name = "InputLine_{}".format(speciesid)
-# poly_lyr_name = "InputPolygon_{}".format(speciesid)
-# eo_lyr_name = "EO_Polygon_{}".format(speciesid)
-
 class Tool:
     """Select all points, lines and polygons for a specific species."""
     # Instantiate the class
@@ -179,16 +173,20 @@ class Tool:
             # Exit the search cursor, but keep the variables from inside the search cursor.
             del row, biotics_cursor
 
-            # # NOTE: DO THIS LOGIC ONLY ONCE! ----------------------------------------------------------------------
-            # Get the existing SpeciesDate group layer as a layer object
-            group_lyr = m.listLayers("SpeciesData")[0]
+            # # ADD SOME ERROR HANDLING IF THE USER DOESN'T HAVE THE REQUIRED SPECIESDATA GROUP LYR WITH SUB-LAYERS
+            # # Check for existence of the "SpeciesData" lyr
+            if len(m.listLayers("SpeciesData")) > 0:
+                # Get the existing SpeciesDate group layer as a layer object
+                group_lyr = m.listLayers("SpeciesData")[0]
 
-            # Write a copy of the SpeciesData group layer to the user's scratch folder
-            arcpy.SaveToLayerFile_management(group_lyr, scratch + "\\species_group.lyrx")
+                # Write a copy of the SpeciesData group layer to the user's scratch folder
+                arcpy.SaveToLayerFile_management(group_lyr, scratch + "\\species_group.lyrx")
 
-            # Create a layer file from the scratch workspace
-            new_group_lyr = arcpy.mp.LayerFile(scratch + "\\species_group.lyrx")
-            # # END OF NOTE -----------------------------------------------------------------------------------------
+                # Create a layer file from the scratch workspace
+                new_group_lyr = arcpy.mp.LayerFile(scratch + "\\species_group.lyrx")
+
+            else:
+                raise exceptions.GroupLyrError
 
             # # USE FUNCTIONS TO CREATE GROUP LAYER AND ALL POINTS/LINES/POLY/EOS LAYERS ----------------------------
             # Create the group layer by calling the create_group_lyr() function
@@ -214,9 +212,6 @@ class Tool:
 
             # Create the eo layer by calling the create_lyr() function
             Tool.create_lyr(m, group_lyr, speciesid, 'EO_Polygon')
-            # Apply symbology to the new EO polygon layer from old layer
-            arcpy.management.ApplySymbologyFromLayer(r"{} ({})\EO_Polygon_{}".format(common_name, sci_name, speciesid),
-                                                     r"SpeciesData\EO_Polygon", None, "MAINTAIN")
             aprx.save()  # save the Pro project
 
             # # FIND ALL RELATED RECORDS THAT NEED TO BE PROCESSED .....................................................
@@ -351,13 +346,15 @@ class Tool:
                                                biotics_fields) as new_biotics_cursor:
 
                         for row in new_biotics_cursor:
-                            arcpy.AddMessage("Processing species id: {}.".format(row[0]))
+                            # arcpy.AddMessage("Processing species id: {}.".format(row[0]))
 
                             # Assign relevant variables from the biotics record
+                            speciesid = row[0]
                             s_level = row[2]
                             sci_name = row[3]
                             common_name = row[4]
 
+                            arcpy.AddMessage("Processing species id: {}.".format(speciesid))
                             arcpy.AddMessage("Scientific Name: {}".format(sci_name))
                             arcpy.AddMessage("Common Name: {}".format(common_name))
                             arcpy.AddMessage("Species Level: {}".format(s_level))
@@ -394,6 +391,9 @@ class Tool:
                     aprx.save()  # save the Pro project for the freshly processed species record
 
                 aprx.save()  # save the Pro project after processing all additional species
+
+            m.clearSelection()  # clear all selections
+            aprx.save()  # save the Pro project
 
             # # Check to see how many records are selected in the Species table [METHOD 1]
             # # If count == 1 then you are only processing the original record selected in BIOTICS
@@ -521,6 +521,10 @@ class Tool:
         # Error handling for custom input error related to the SQL statement
         except exceptions.InputError:
             arcpy.AddError("Incorrect sql statement. See Messages for more details.")
+
+        # Error handling for custom error related to SpeciesData group layer
+        except exceptions.GroupLyrError:
+            arcpy.AddError("SpeciesData Group Layer and sub layers do not exist. Load data from WCSC-KBA Map Template.")
 
         # Error handling if an error occurs while using a Geoprocessing Tool in the script
         except arcpy.ExecuteError:
