@@ -16,16 +16,134 @@ import traceback
 import exceptions  # this is a custom module
 
 
+# # Naming conventions for point/line/polygon layers = InputPoint_SpeciesID
+# point_lyr_name = "InputPoint_{}".format(speciesid)
+# line_lyr_name = "InputLine_{}".format(speciesid)
+# poly_lyr_name = "InputPolygon_{}".format(speciesid)
+# eo_lyr_name = "EO_Polygon_{}".format(speciesid)
+
 class Tool:
     """Select all points, lines and polygons for a specific species."""
     # Instantiate the class
     def __init__(self):
         pass
 
-    # Define a function that takes a parameter. This function will be called from within the run_tool function
-    # Function = reusable piece of code
-    def create_lyr(current_lyr):
-        arcpy.AddMessage("This is the create_lyr function. Current layer: {}".format(current_lyr))
+    # Define a function to create the group layer for a selected record (Function = reusable piece of code)
+    # This function will be called from within the run_tool function
+    # The first parameter should be self, but I don't understand how to get it work properly
+    def create_group_lyr(m, grp_lyr, sp_com_name, sp_sci_name):
+        arcpy.AddMessage("Run create_group_lyr function.")
+
+        # Naming convention for output group layer: Common Name (Scientific Name)
+        group_lyr_name = "{} ({})".format(sp_com_name, sp_sci_name)
+        arcpy.AddMessage("Processing {} ...".format(group_lyr_name))
+
+        # Add a copy of the SpeciesData group layer to the TOC (by referencing the .lyrx file written to scratch)
+        m.addLayer(grp_lyr, "TOP")
+
+        # Rename the newly added group layer, because layer was added at top index reference = [0]
+        group_lyr = m.listLayers("SpeciesData")[0]
+        group_lyr.name = group_lyr_name  # rename the group layer in TOC
+        group_lyr = m.listLayers(group_lyr_name)[0]
+        group_lyr.isVisible = False  # turn off the visibility for the group layer
+
+        return group_lyr
+
+    # Define a function to create the InputPoint layer for the species
+    def create_point_lyr(m, grp_lyr, speciesid):
+        arcpy.AddMessage("Run create_point_lyr function.")
+
+        # Naming convention for point/line/polygon layers = InputPoint_SpeciesID
+        lyr_name = "InputPoint_{}".format(speciesid)
+
+        lyr = m.listLayers("InputPoint")[0]
+
+        # Make a new feature layer with sql query and added .getOutput(0) function
+        new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, "speciesid = {}".format(speciesid),
+                                                    None).getOutput(0)
+
+        # Get a count of the records in the new feature layer
+        row_count = int(arcpy.GetCount_management(new_lyr).getOutput(0))
+
+        # Check to see if there are any point records for the species
+        if row_count != 0:
+            m.addLayerToGroup(grp_lyr, new_lyr, "TOP")  # Add the new point layer
+        else:
+            pass  # Do nothing
+
+        m.removeLayer(lyr)  # remove old point layer
+
+    # Define a function to create the InputLine layer for the species
+    def create_line_lyr(m, grp_lyr, speciesid):
+        arcpy.AddMessage("Run create_line_lyr function.")
+
+        # Naming convention for point/line/polygon layers = InputLine_SpeciesID
+        lyr_name = "InputLine_{}".format(speciesid)
+
+        lyr = m.listLayers("InputLine")[0]
+
+        # Make a new feature layer with sql query and added .getOutput(0) function
+        new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, "speciesid = {}".format(speciesid),
+                                                    None).getOutput(0)
+
+        # Get a count of the records in the new feature layer
+        row_count = int(arcpy.GetCount_management(new_lyr).getOutput(0))
+
+        # Check to see if there are any point records for the species
+        if row_count != 0:
+            m.addLayerToGroup(grp_lyr, new_lyr, "TOP")  # Add the new line layer
+        else:
+            pass  # Do nothing
+
+        m.removeLayer(lyr)  # remove old line layer
+
+    # Define a function to create the InputLine layer for the species
+    def create_poly_lyr(m, grp_lyr, speciesid):
+        arcpy.AddMessage("Run create_poly_lyr function.")
+
+        # Naming convention for point/line/polygon layers = InputPolygon_SpeciesID
+        lyr_name = "InputPolygon_{}".format(speciesid)
+
+        lyr = m.listLayers("InputPolygon")[0]
+
+        # Make a new feature layer with sql query and added .getOutput(0) function
+        new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, "speciesid = {}".format(speciesid),
+                                                    None).getOutput(0)
+
+        # Get a count of the records in the new feature layer
+        row_count = int(arcpy.GetCount_management(new_lyr).getOutput(0))
+
+        # Check to see if there are any point records for the species
+        if row_count != 0:
+            m.addLayerToGroup(grp_lyr, new_lyr, "TOP")  # Add the new poly layer
+        else:
+            pass  # Do nothing
+
+        m.removeLayer(lyr)  # remove old poly layer
+
+    # Define a function to create the InputLine layer for the species
+    def create_eo_lyr(m, grp_lyr, speciesid):
+        arcpy.AddMessage("Run create_poly_lyr function.")
+
+        # Naming convention for point/line/polygon layers = EO_Polygon_SpeciesID
+        lyr_name = "EO_Polygon_{}".format(speciesid)
+
+        lyr = m.listLayers("EO_Polygon")[0]
+
+        # Make a new feature layer with sql query and added .getOutput(0) function
+        new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, "speciesid = {}".format(speciesid),
+                                                    None).getOutput(0)
+
+        # Get a count of the records in the new feature layer
+        row_count = int(arcpy.GetCount_management(new_lyr).getOutput(0))
+
+        # Check to see if there are any point records for the species
+        if row_count != 0:
+            m.addLayerToGroup(grp_lyr, new_lyr, "TOP")  # Add the new eo layer
+        else:
+            pass  # Do nothing
+
+        m.removeLayer(lyr)  # remove old eo layer
 
     # Define a function to run the tool
     def run_tool(self, parameters, messages):
@@ -107,6 +225,7 @@ class Tool:
                     arcpy.AddMessage("Element Code: {}\n".format(element_code))
 
             # Exit the search cursor, but keep the variables from inside the search cursor.
+            del row, biotics_cursor
 
             # # NOTE: DO THIS LOGIC ONLY ONCE! -------------------------------------------------------
             # Get the existing SpeciesDate group layer as a layer object
@@ -119,24 +238,25 @@ class Tool:
             new_group_lyr = arcpy.mp.LayerFile(scratch + "\\species_group.lyrx")
             # # END OF NOTE --------------------------------------------------------------------------------------
 
-            # # THIS LOGIC WILL BE REPEATED LATER FOR EACH SPECIES THAT NEEDS TO BE PROCESSED [FUNCTION???]
-            # Generate the group layer and sublayers for the original selected record [UP HERE???]
-            # Naming convention for output group layer: Common Name (Scientific Name)
-            group_lyr_name = "{} ({})".format(common_name, sci_name)
-            arcpy.AddMessage("Processing {} ...".format(group_lyr_name))
-
-            # Add a copy of the SpeciesData group layer to the TOC (by referencing the .lyrx file written to scratch)
-            m.addLayer(new_group_lyr, "TOP")
-
-            # Rename the newly added group layer, because layer was added at top index reference = [0]
-            group_lyr = m.listLayers("SpeciesData")[0]
-            group_lyr.name = group_lyr_name  # rename the group layer in TOC
-            group_lyr = m.listLayers(group_lyr_name)[0]
-
-            group_lyr.isVisible = False  # turn off the visibility for the group layer
+            # Create the group layer by calling the create_group_lyr() function [WORKS]
+            group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name)
             aprx.save()  # save the Pro project
 
+            # Create the point layer by calling the create_point_lyr() function
+            Tool.create_point_lyr(m, group_lyr, speciesid)
+            aprx.save()  # save the Pro project
 
+            # Create the line layer by calling the create_line_lyr() function
+            Tool.create_line_lyr(m, group_lyr, speciesid)
+            aprx.save()  # save the Pro project
+
+            # Create the polygon layer by calling the create_poly_lyr() function
+            Tool.create_poly_lyr(m, group_lyr, speciesid)
+            aprx.save()  # save the Pro project
+
+            # Create the EO layer by calling the create_eo_lyr() function
+            Tool.create_eo_lyr(m, group_lyr, speciesid)
+            aprx.save()  # save the Pro project
 
             # # FIND ALL RELATED RECORDS THAT NEED TO BE PROCESSED .....................................................
             # Assign sql query variable related to the species id
@@ -156,22 +276,21 @@ class Tool:
                 element_code for the full species from Biotics to the fullspecies_elementcode for the infraspecies
                 records in Species table."""
 
-                # Select records from Species table where fullspecies_elementcode matches the element_code
+                # Select records from Species table where fullspecies_elementcode matches the element_code from Biotics
                 species_records = arcpy.management.SelectLayerByAttribute("Species",
                                                                           "ADD_TO_SELECTION",
                                                                           "fullspecies_elementcode = '{}'"
                                                                           .format(element_code))
 
-                # Iterate through the selected records and create a list of the species ids
+                # Iterate through the selected records and create a list of the additional species ids
                 with arcpy.da.SearchCursor(species_records, ["speciesid"]) as species_cursor:
                     for species_row in species_cursor:
-                        speciesid_list.append(species_row[0])  # Append current speciesid for the row to the list
+                        # Only process new species id values
+                        if species_row[0] != speciesid:
+                            speciesid_list.append(species_row[0])  # Append current speciesid for the row to the list
+                        else:
+                            pass
 
-                arcpy.AddMessage(speciesid_list)
-
-                # If the speciesid list is only one record long, then the script is finished [GO TO END]
-
-                # Else delete some variables
                 del species_cursor, species_row  # delete some variables
 
                 # # Get a count of the # of species records to be processed [WILL BECOME OBSOLETE]
@@ -198,13 +317,13 @@ class Tool:
                     fullspecies_elementcode for the selected infraspecies record in Species table to the element_code
                     for the full species in Biotics."""
 
-                    # Create a search cursor for the Species table to get the fullspecies_elementcode
+                    # Create a search cursor to get the fullspecies_elementcode from the Species table
                     with arcpy.da.SearchCursor("Species",
                                                ["fullspecies_elementcode"],
                                                speciesid_sql) as species_cursor:
 
                         for species_row in species_cursor:
-                            fs_elementcode = species_row[0]  # get the fullspecies_elementcode
+                            fs_elementcode = species_row[0]  # get the fullspecies_elementcode [singular value]
 
                     # Add the full species record to the selected infraspecies record in the Species table
                     species_records = arcpy.management.SelectLayerByAttribute("Species",
@@ -215,11 +334,12 @@ class Tool:
                     # Iterate through the selected records and create a list of the species ids
                     with arcpy.da.SearchCursor(species_records, ["speciesid"]) as species_cursor:
                         for species_row in species_cursor:
-                            speciesid_list.append(species_row[0])  # Append current speciesid for the row to the list
+                            # Only process new species id values
+                            if species_row[0] != speciesid:
+                                speciesid_list.append(species_row[0])  # Append current speciesid to the list
+                            else:
+                                pass
 
-                    # If the speciesid list is only one record long, then the script is finished [GO TO END]
-
-                    # Else delete some variables
                     del species_cursor, species_row  # delete some variables
 
                     # # Get count of selected records (should equal count + 1) [WILL BECOME OBSOLETE]
@@ -228,7 +348,9 @@ class Tool:
 
                 # Logic if users only wants to process the single infraspecies by itself
                 else:
-                    speciesid_list.append(speciesid)  # Append ORIGINAL speciesid to the list
+                    pass  # Do nothing, record is already processed
+
+                    # speciesid_list.append(speciesid)  # Append ORIGINAL speciesid to the list
 
                     # # Select initial record from Species table based on the speciesid [WILL BECOME REDUNDANT?]
                     # species_records = arcpy.management.SelectLayerByAttribute("Species",
@@ -241,18 +363,18 @@ class Tool:
 
             """ This is where you end up if you select a full species; if you select an infraspecies and
                 param_infraspecies == "Yes"; or if you select an infraspecies and param_infraspecies == "No".
-                Iterate through the selected species records and create output layers in the map TOC."""
+                Check to see if there are additional species records to process and create output layers as needed."""
 
             # METHOD 2 PROCESS THE RECORDS USING THE SPECIESID_LIST
+            if len(speciesid_list) < 1:
+                arcpy.AddMessage("No additional records to process.")
+                pass  # Do nothing and go to end of script
 
-            # Iterate through the records in the speciesid_list
-            for s_id in speciesid_list:
-                # process all records in the list
-                arcpy.AddMessage("Processing id {} now ...".format(s_id))
-
-                # Don't process the original record special because you already did it up top
-                if s_id != speciesid:
-                    arcpy.AddMessage("Processing additional records.")
+            else:
+                # Iterate through the other species records [ONLY IF THE LIST IS MORE THAN ONE RECORD LONG]
+                for s_id in speciesid_list:
+                    # process all records in the list
+                    arcpy.AddMessage("Processing id {} now ...".format(s_id))
 
                     # Query biotics to get species information
 
@@ -260,8 +382,6 @@ class Tool:
 
                     # Generate point/line/polygon layers
 
-                else:
-                    pass
 
 
             # # Check to see how many records are selected in the Species table [METHOD 1]
