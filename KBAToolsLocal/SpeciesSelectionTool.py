@@ -50,37 +50,13 @@ class Tool:
         return group_lyr
 
     # Define a function to create the InputPoint layer for the species
-    def create_point_lyr(m, grp_lyr, speciesid):
-        arcpy.AddMessage("Run create_point_lyr function.")
+    def create_lyr(m, grp_lyr, speciesid, ft_type):
+        arcpy.AddMessage("Run create_lyr function for {}.".format(ft_type))
 
         # Naming convention for point/line/polygon layers = InputPoint_SpeciesID
-        lyr_name = "InputPoint_{}".format(speciesid)
+        lyr_name = "{}_{}".format(ft_type, speciesid)
 
-        lyr = m.listLayers("InputPoint")[0]
-
-        # Make a new feature layer with sql query and added .getOutput(0) function
-        new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, "speciesid = {}".format(speciesid),
-                                                    None).getOutput(0)
-
-        # Get a count of the records in the new feature layer
-        row_count = int(arcpy.GetCount_management(new_lyr).getOutput(0))
-
-        # Check to see if there are any point records for the species
-        if row_count != 0:
-            m.addLayerToGroup(grp_lyr, new_lyr, "TOP")  # Add the new point layer
-        else:
-            pass  # Do nothing
-
-        m.removeLayer(lyr)  # remove old point layer
-
-    # Define a function to create the InputLine layer for the species
-    def create_line_lyr(m, grp_lyr, speciesid):
-        arcpy.AddMessage("Run create_line_lyr function.")
-
-        # Naming convention for point/line/polygon layers = InputLine_SpeciesID
-        lyr_name = "InputLine_{}".format(speciesid)
-
-        lyr = m.listLayers("InputLine")[0]
+        lyr = m.listLayers(ft_type)[0]
 
         # Make a new feature layer with sql query and added .getOutput(0) function
         new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, "speciesid = {}".format(speciesid),
@@ -89,13 +65,13 @@ class Tool:
         # Get a count of the records in the new feature layer
         row_count = int(arcpy.GetCount_management(new_lyr).getOutput(0))
 
-        # Check to see if there are any point records for the species
+        # Check to see if there are anyrecords for the species
         if row_count != 0:
-            m.addLayerToGroup(grp_lyr, new_lyr, "TOP")  # Add the new line layer
+            m.addLayerToGroup(grp_lyr, new_lyr, "BOTTOM")  # Add the new layer
         else:
             pass  # Do nothing
 
-        m.removeLayer(lyr)  # remove old line layer
+        m.removeLayer(lyr)  # remove old layer
 
     # Define a function to create the InputLine layer for the species
     def create_poly_lyr(m, grp_lyr, speciesid):
@@ -120,30 +96,6 @@ class Tool:
             pass  # Do nothing
 
         m.removeLayer(lyr)  # remove old poly layer
-
-    # Define a function to create the InputLine layer for the species
-    def create_eo_lyr(m, grp_lyr, speciesid):
-        arcpy.AddMessage("Run create_poly_lyr function.")
-
-        # Naming convention for point/line/polygon layers = EO_Polygon_SpeciesID
-        lyr_name = "EO_Polygon_{}".format(speciesid)
-
-        lyr = m.listLayers("EO_Polygon")[0]
-
-        # Make a new feature layer with sql query and added .getOutput(0) function
-        new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, "speciesid = {}".format(speciesid),
-                                                    None).getOutput(0)
-
-        # Get a count of the records in the new feature layer
-        row_count = int(arcpy.GetCount_management(new_lyr).getOutput(0))
-
-        # Check to see if there are any point records for the species
-        if row_count != 0:
-            m.addLayerToGroup(grp_lyr, new_lyr, "TOP")  # Add the new eo layer
-        else:
-            pass  # Do nothing
-
-        m.removeLayer(lyr)  # remove old eo layer
 
     # Define a function to run the tool
     def run_tool(self, parameters, messages):
@@ -227,7 +179,7 @@ class Tool:
             # Exit the search cursor, but keep the variables from inside the search cursor.
             del row, biotics_cursor
 
-            # # NOTE: DO THIS LOGIC ONLY ONCE! -------------------------------------------------------
+            # # NOTE: DO THIS LOGIC ONLY ONCE! ----------------------------------------------------------------------
             # Get the existing SpeciesDate group layer as a layer object
             group_lyr = m.listLayers("SpeciesData")[0]
 
@@ -236,26 +188,35 @@ class Tool:
 
             # Create a layer file from the scratch workspace
             new_group_lyr = arcpy.mp.LayerFile(scratch + "\\species_group.lyrx")
-            # # END OF NOTE --------------------------------------------------------------------------------------
+            # # END OF NOTE -----------------------------------------------------------------------------------------
 
-            # Create the group layer by calling the create_group_lyr() function [WORKS]
+            # # USE FUNCTIONS TO CREATE GROUP LAYER AND ALL POINTS/LINES/POLY/EOS LAYERS ----------------------------
+            # Create the group layer by calling the create_group_lyr() function
             group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name)
             aprx.save()  # save the Pro project
 
-            # Create the point layer by calling the create_point_lyr() function
-            Tool.create_point_lyr(m, group_lyr, speciesid)
+            # # USE THE SAME FUNCTION TO CREATE ALL POINTS/LINES/EOS
+            # Create the point layer by calling the create_lyr() function
+            Tool.create_lyr(m, group_lyr, speciesid, 'InputPoint')
             aprx.save()  # save the Pro project
 
-            # Create the line layer by calling the create_line_lyr() function
-            Tool.create_line_lyr(m, group_lyr, speciesid)
+            # Create the line layer by calling the create_lyr() function
+            Tool.create_lyr(m, group_lyr, speciesid, 'InputLine')
             aprx.save()  # save the Pro project
 
-            # Create the polygon layer by calling the create_poly_lyr() function
-            Tool.create_poly_lyr(m, group_lyr, speciesid)
+            # Create the polygon layer by calling the create_lyr() function
+            Tool.create_lyr(m, group_lyr, speciesid, 'InputPolygon')
             aprx.save()  # save the Pro project
 
-            # Create the EO layer by calling the create_eo_lyr() function
-            Tool.create_eo_lyr(m, group_lyr, speciesid)
+            # # Create the polygon layer by calling the create_poly_lyr() function [KEEP FOR ADDITIONAL LOGIC LATER]
+            # Tool.create_poly_lyr(m, group_lyr, speciesid)
+            # aprx.save()  # save the Pro project
+
+            # Create the eo layer by calling the create_lyr() function
+            Tool.create_lyr(m, group_lyr, speciesid, 'EO_Polygon')
+            # Apply symbology to the new EO polygon layer from old layer
+            arcpy.management.ApplySymbologyFromLayer(r"{} ({})\EO_Polygon_{}".format(common_name, sci_name, speciesid),
+                                                     r"SpeciesData\EO_Polygon", None, "MAINTAIN")
             aprx.save()  # save the Pro project
 
             # # FIND ALL RELATED RECORDS THAT NEED TO BE PROCESSED .....................................................
@@ -346,7 +307,7 @@ class Tool:
                     # count = int(arcpy.GetCount_management(species_records).getOutput(0))
                     # arcpy.AddMessage("{} species records selected (after adding full species).".format(count))
 
-                # Logic if users only wants to process the single infraspecies by itself
+                # Logic if user only wants to process the single infraspecies by itself
                 else:
                     pass  # Do nothing, record is already processed
 
@@ -376,13 +337,59 @@ class Tool:
                     # process all records in the list
                     arcpy.AddMessage("Processing id {} now ...".format(s_id))
 
+                    # Assign sql query variable related to the current species id in the list
+                    speciesid_sql = "speciesid = {}".format(s_id)
+
                     # Query biotics to get species information
+                    # Create a search cursor to get species information from the Biotics table
+                    with arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+                                               biotics_fields,
+                                               speciesid_sql) as biotics_cursor:
 
-                    # Generate group layer
+                        for row in biotics_cursor:
+                            # Assign variables from the record based on the list order in biotics_fields variable
+                            speciesid = row[0]
+                            element_code = row[1]
+                            s_level = row[2]
+                            sci_name = row[3]
+                            common_name = row[4]
 
-                    # Generate point/line/polygon layers
+                            arcpy.AddMessage("\nSpecies ID: {}".format(speciesid))
+                            arcpy.AddMessage("Scientific Name: {}".format(sci_name))
+                            arcpy.AddMessage("Common Name: {}".format(common_name))
+                            arcpy.AddMessage("Species Level: {}".format(s_level))
+                            arcpy.AddMessage("Element Code: {}\n".format(element_code))
 
+                    # # USE FUNCTIONS TO CREATE GROUP LAYER AND ALL POINTS/LINES/POLY/EOS LAYERS ----------------------
+                    # Create the group layer by calling the create_group_lyr() function
+                    group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name)
+                    aprx.save()  # save the Pro project
 
+                    # # USE THE SAME FUNCTION TO CREATE ALL POINTS/LINES/EOS
+                    # Create the point layer by calling the create_lyr() function
+                    Tool.create_lyr(m, group_lyr, speciesid, 'InputPoint')
+                    aprx.save()  # save the Pro project
+
+                    # Create the line layer by calling the create_lyr() function
+                    Tool.create_lyr(m, group_lyr, speciesid, 'InputLine')
+                    aprx.save()  # save the Pro project
+
+                    # Create the polygon layer by calling the create_lyr() function
+                    Tool.create_lyr(m, group_lyr, speciesid, 'InputPolygon')
+                    aprx.save()  # save the Pro project
+
+                    # # Create the polygon layer by calling the create_poly_lyr() function [KEEP FOR LATER]
+                    # Tool.create_poly_lyr(m, group_lyr, speciesid)
+                    # aprx.save()  # save the Pro project
+
+                    # Create the eo layer by calling the create_lyr() function
+                    Tool.create_lyr(m, group_lyr, speciesid, 'EO_Polygon')
+                    # Apply symbology to the new EO polygon layer from old layer
+                    arcpy.management.ApplySymbologyFromLayer(
+                        r"{} ({})\EO_Polygon_{}".format(common_name, sci_name, speciesid),
+                        r"SpeciesData\EO_Polygon", None, "MAINTAIN")
+
+                    aprx.save()  # save the Pro project
 
             # # Check to see how many records are selected in the Species table [METHOD 1]
             # # If count == 1 then you are only processing the original record selected in BIOTICS
