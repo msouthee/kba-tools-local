@@ -106,7 +106,6 @@ class ToolSpeciesSelection(object):
         return
 
 
-
 # # # TEMPLATE
 # # Sample Template for Toolbox
 # class Toolbox(object):
@@ -144,4 +143,11 @@ class ToolSpeciesSelection(object):
 #
 #     def updateMessages(self, parameters):
 #         """Modify the messages created by internal validation for each tool
-#         parameter.  This method is called after internal validati
+#         parameter.  This method is called after internal validation."""
+#         return
+#
+#     def execute(self, parameters, messages):
+#         """The source code of the tool."""
+#         sst = SpeciesSelectionTool.Tool()
+#         sst.run_tool(parameters, messages)
+#         return

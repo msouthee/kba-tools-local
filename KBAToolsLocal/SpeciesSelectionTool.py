@@ -437,4 +437,5 @@ if __name__ == '__main__':
 
     parameters = [param_table, param_sql, param_infraspecies]
 
-    # Call the run_tool function using th
+    # Call the run_tool function using the input parameters (for the sst instance of class Tool)
+    sst.run_tool(parameters, None)
