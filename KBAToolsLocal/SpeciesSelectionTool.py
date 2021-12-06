@@ -432,7 +432,7 @@ if __name__ == '__main__':
 
     param_table.value = "BIOTICS_ELEMENT_NATIONAL"  # run local & server. User-friendly SQL statements.
     # param_table.value = "C:\\GIS\\EBAR\\nsc-gis-ebarkba.sde\\BIOTICS_ELEMENT_NATIONAL"  # run server. No.
-    param_sql.value = "national_scientific_name = 'Abronia umbellata'"
+    param_sql.value = "national_scientific_name = 'Abronia latifolia'"
     param_infraspecies = "Yes"
 
     parameters = [param_table, param_sql, param_infraspecies]
