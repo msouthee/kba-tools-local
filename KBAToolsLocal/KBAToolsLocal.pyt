@@ -42,7 +42,7 @@ class ToolSpeciesSelection(object):
 
         # Table parameter. Because parameterType = Derived, this parameter will NOT show up in the Tool dialog window.
         param_table = arcpy.Parameter(
-            displayName='Biotics Table (already selected for you)',
+            displayName='Biotics Table',
             name='biotics',
             datatype='GPTableView',
             parameterType='Derived',
