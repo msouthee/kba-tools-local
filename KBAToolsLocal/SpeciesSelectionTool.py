@@ -430,11 +430,11 @@ if __name__ == '__main__':
     param_sql = arcpy.Parameter()
     param_infraspecies = arcpy.Parameter()
 
-    param_table.value = "BIOTICS_ELEMENT_NATIONAL"
+    param_table.value = "BIOTICS_ELEMENT_NATIONAL"  # run local & server. User-friendly SQL statements.
+    # param_table.value = "C:\\GIS\\EBAR\\nsc-gis-ebarkba.sde\\BIOTICS_ELEMENT_NATIONAL"  # run server. No.
     param_sql.value = "national_scientific_name = 'Abronia umbellata'"
     param_infraspecies = "Yes"
 
     parameters = [param_table, param_sql, param_infraspecies]
 
-    # Call the run_tool function using the input parameters (for the sst instance of class Tool)
-    sst.run_tool(parameters, None)
+    # Call the run_tool function using th

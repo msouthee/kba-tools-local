@@ -48,8 +48,9 @@ class ToolSpeciesSelection(object):
             parameterType='Derived',
             direction='Input')
 
-        # Default table to populate in the tool
-        param_table.value = "BIOTICS_ELEMENT_NATIONAL"
+        # Default table to populate in the tool.
+        param_table.value = "BIOTICS_ELEMENT_NATIONAL"  # run local & server. User-friendly SQL statements available
+        # param_table.value = "C:\\GIS\\EBAR\\nsc-gis-ebarkba.sde\\BIOTICS_ELEMENT_NATIONAL"  # run server. No
 
         # SQL parameter
         param_sql = arcpy.Parameter(
@@ -143,9 +144,4 @@ class ToolSpeciesSelection(object):
 #
 #     def updateMessages(self, parameters):
 #         """Modify the messages created by internal validation for each tool
-#         parameter.  This method is called after internal validation."""
-#         return
-#
-#     def execute(self, parameters, messages):
-#         """The source code of the tool."""
-#         return
+#         parameter.  This method is called after internal validati
