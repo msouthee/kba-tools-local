@@ -70,7 +70,7 @@ class Tool:
             # Get a count of the records in the new feature layer
             row_count = int(arcpy.GetCount_management(new_lyr).getOutput(0))
 
-            # Check to see if there are anyrecords for the species
+            # Check to see if there are any records for the species
             if row_count != 0:
                 m.addLayerToGroup(grp_lyr, new_lyr, "BOTTOM")  # Add the new layer
             else:
@@ -81,7 +81,7 @@ class Tool:
         else:
             raise SpeciesDataError
 
-    # Define a function to create the InputLine layer for the species
+    # Define a function to create the InputPolygon layer for the species
     def create_poly_lyr(m, grp_lyr, speciesid):
         arcpy.AddMessage("Run create_poly_lyr function.")
 
@@ -98,7 +98,7 @@ class Tool:
             # Get a count of the records in the new feature layer
             row_count = int(arcpy.GetCount_management(new_lyr).getOutput(0))
 
-            # Check to see if there are any point records for the species
+            # Check to see if there are any records for the species
             if row_count != 0:
                 m.addLayerToGroup(grp_lyr, new_lyr, "TOP")  # Add the new poly layer
             else:
