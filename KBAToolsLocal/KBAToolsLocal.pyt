@@ -50,7 +50,6 @@ class ToolSpeciesSelection(object):
 
         # Default table to populate in the tool.
         param_table.value = "BIOTICS_ELEMENT_NATIONAL"  # run local & server. User-friendly SQL statements available
-        # param_table.value = "C:\\GIS\\EBAR\\nsc-gis-ebarkba.sde\\BIOTICS_ELEMENT_NATIONAL"  # run server. No
 
         # SQL parameter
         param_sql = arcpy.Parameter(
