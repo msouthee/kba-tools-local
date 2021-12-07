@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------------------------------------------------
-# Script Name:      KBAToolsLocal.pyt
+# Script Name:      KBAToolsLocal_v1.pyt
 #
 # Script created:   2021-11-18
-# Last Updated:     2021-11-18
+# Last Updated:     2021-12-07
 # Script Author:    Meg Southee
+# Credits:          © WCS Canada / Meg Southee 2021
 #
 # Purpose:          Python Toolbox to hold the KBAToolsLocal to be run by regional coordinators on local computers.
 # ----------------------------------------------------------------------------------------------------------------------

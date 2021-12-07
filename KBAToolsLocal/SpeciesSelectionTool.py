@@ -2,8 +2,9 @@
 # Script Name:      SpeciesSelectionTool.py
 #
 # Script Created:   2021-10-27
-# Last Updated:     2021-12-03
+# Last Updated:     2021-12-073
 # Script Author:    Meg Southee
+# Credits:          © WCS Canada / Meg Southee 2021
 #
 # Purpose:          Create definition queries and group the output datasets (with valid data) under a species heading
 #                   in the TOC in the active map.
