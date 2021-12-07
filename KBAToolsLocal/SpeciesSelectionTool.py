@@ -2,7 +2,7 @@
 # Script Name:      SpeciesSelectionTool.py
 #
 # Script Created:   2021-10-27
-# Last Updated:     2021-12-073
+# Last Updated:     2021-12-07
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
@@ -17,7 +17,17 @@ import traceback
 
 
 # Define custom exception for error handling
-class BioticsInputError(Exception):
+class BioticsSQLError(Exception):
+    pass
+
+
+# Define custom exception for error handling
+class BioticsTableError(Exception):
+    pass
+
+
+# Define custom exception for error handling
+class SpeciesTableError(Exception):
     pass
 
 
@@ -147,6 +157,39 @@ class Tool:
             scratch = arcpy.env.scratchFolder
             arcpy.AddMessage("Scratch folder: {}".format(scratch))
 
+            # # ERROR HANDLING TO CHECK THAT THE MAP CONTAINS THE NECESSARY TABLES AND DATA LAYERS
+            # Error handling to ensure that the Biotics table exists
+            if arcpy.Exists("BIOTICS_ELEMENT_NATIONAL"):
+                arcpy.AddMessage("BIOTICS_ELEMENT_NATIONAL table exists.")
+                pass
+
+            else:
+                raise BioticsTableError
+
+            # Error handling to ensure that the Species table exists
+            if arcpy.Exists("Species (view only)"):
+                arcpy.AddMessage("Species (view only) table exists.")
+                species_table = "Species (view only)"
+                pass
+
+            else:
+                raise SpeciesTableError
+
+            # Error handling to check for existence of the "SpeciesData" group lyr
+            if len(m.listLayers("SpeciesData")) > 0:
+                # Get the existing SpeciesDate group layer as a layer object
+                group_lyr = m.listLayers("SpeciesData")[0]
+
+                # Write a copy of the SpeciesData group layer to the user's scratch folder
+                arcpy.SaveToLayerFile_management(group_lyr, scratch + "\\species_group.lyrx")
+
+                # Create a layer file from the scratch workspace
+                new_group_lyr = arcpy.mp.LayerFile(scratch + "\\species_group.lyrx")
+
+            else:
+                raise SpeciesDataError
+
+            # # START PROCESSING
             # Select the record in BIOTICS table based on the user-specified sql expression
             biotics_record = arcpy.management.SelectLayerByAttribute(param_table, "NEW_SELECTION", param_sql)
 
@@ -156,11 +199,11 @@ class Tool:
             # if count = 0, throw error using custom exception
             if biotics_count == 0:
                 arcpy.AddMessage("No records selected.")
-                raise BioticsInputError
+                raise BioticsSQLError
 
             # if count > 1, throw error using custom exception
             elif biotics_count > 1:
-                raise BioticsInputError
+                raise BioticsSQLError
 
             else:
                 pass
@@ -187,21 +230,6 @@ class Tool:
 
             # Exit the search cursor, but keep the variables from inside the search cursor.
             del row, biotics_cursor
-
-            # # ERROR HANDLING IF THE USER DOESN'T HAVE THE REQUIRED SPECIESDATA GROUP LYR WITH SUB-LAYERS
-            # # Check for existence of the "SpeciesData" lyr
-            if len(m.listLayers("SpeciesData")) > 0:
-                # Get the existing SpeciesDate group layer as a layer object
-                group_lyr = m.listLayers("SpeciesData")[0]
-
-                # Write a copy of the SpeciesData group layer to the user's scratch folder
-                arcpy.SaveToLayerFile_management(group_lyr, scratch + "\\species_group.lyrx")
-
-                # Create a layer file from the scratch workspace
-                new_group_lyr = arcpy.mp.LayerFile(scratch + "\\species_group.lyrx")
-
-            else:
-                raise SpeciesDataError
 
             # # USE FUNCTIONS TO CREATE GROUP LAYER AND ALL POINTS/LINES/POLY/EOS LAYERS ----------------------------
             # Create the group layer by calling the create_group_lyr() function
@@ -239,7 +267,7 @@ class Tool:
                 arcpy.AddMessage("Full species selected. Process all infraspecies (if they exist).")
 
                 # Select matching record from Species table for the initial full species record in Biotics
-                species_records = arcpy.management.SelectLayerByAttribute("Species",
+                species_records = arcpy.management.SelectLayerByAttribute(species_table,
                                                                           "NEW_SELECTION",
                                                                           speciesid_sql)
 
@@ -248,7 +276,7 @@ class Tool:
                 records in Species table."""
 
                 # Select records from Species table where fullspecies_elementcode matches the element_code from Biotics
-                species_records = arcpy.management.SelectLayerByAttribute("Species",
+                species_records = arcpy.management.SelectLayerByAttribute(species_table,
                                                                           "ADD_TO_SELECTION",
                                                                           "fullspecies_elementcode = '{}'"
                                                                           .format(element_code))
@@ -272,7 +300,7 @@ class Tool:
                 if param_infraspecies == "Yes":
 
                     # Select initial record from Species table based on the speciesid
-                    species_records = arcpy.management.SelectLayerByAttribute("Species",
+                    species_records = arcpy.management.SelectLayerByAttribute(species_table,
                                                                               "NEW_SELECTION",
                                                                               speciesid_sql)
 
@@ -281,7 +309,7 @@ class Tool:
                     for the full species in Biotics."""
 
                     # Create a search cursor to get the fullspecies_elementcode from the Species table
-                    with arcpy.da.SearchCursor("Species",
+                    with arcpy.da.SearchCursor(species_table,
                                                ["fullspecies_elementcode"],
                                                speciesid_sql) as species_cursor:
 
@@ -289,7 +317,7 @@ class Tool:
                             fs_elementcode = species_row[0]  # get the fullspecies_elementcode [singular value]
 
                     # Add the full species record to the selected infraspecies record in the Species table
-                    species_records = arcpy.management.SelectLayerByAttribute("Species",
+                    species_records = arcpy.management.SelectLayerByAttribute(species_table,
                                                                               "ADD_TO_SELECTION",
                                                                               "fullspecies_elementcode = '{}'"
                                                                               .format(fs_elementcode))
@@ -383,8 +411,17 @@ class Tool:
             arcpy.AddMessage("End of script.")
 
         # Error handling for custom input error related to the biotics SQL statement
-        except BioticsInputError:
+        except BioticsSQLError:
             arcpy.AddError("Incorrect sql statement. See Messages for more details.")
+
+        # Error handling for custom input error related to the biotics SQL statement
+        except BioticsTableError:
+            arcpy.AddError("BIOTICS_ELEMENT_NATIONAL table does not exist. "
+                           "Re-load original Species table from WCSC-KBA Map Template.")
+
+        # Error handling for custom input error related to the biotics SQL statement
+        except SpeciesTableError:
+            arcpy.AddError("Species table does not exist. Re-load original Species table from WCSC-KBA Map Template.")
 
         # Error handling for custom error related to SpeciesData group layer not existing
         except SpeciesDataError:
