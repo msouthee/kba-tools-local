@@ -234,28 +234,28 @@ class Tool:
             # # USE FUNCTIONS TO CREATE GROUP LAYER AND ALL POINTS/LINES/POLY/EOS LAYERS ----------------------------
             # Create the group layer by calling the create_group_lyr() function
             group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name)
-            aprx.save()  # save the Pro project
+            # aprx.save()  # save the Pro project
 
             # # USE THE SAME FUNCTION TO CREATE ALL POINTS/LINES/EOS
             # Create the point layer by calling the create_lyr() function
             Tool.create_lyr(m, group_lyr, speciesid, 'InputPoint')
-            aprx.save()  # save the Pro project
+            # aprx.save()  # save the Pro project
 
             # Create the line layer by calling the create_lyr() function
             Tool.create_lyr(m, group_lyr, speciesid, 'InputLine')
-            aprx.save()  # save the Pro project
+            # aprx.save()  # save the Pro project
 
             # Create the polygon layer by calling the create_lyr() function
             Tool.create_lyr(m, group_lyr, speciesid, 'InputPolygon')
-            aprx.save()  # save the Pro project
+            # aprx.save()  # save the Pro project
 
             # # Create the polygon layer by calling the create_poly_lyr() function [KEEP FOR ADDITIONAL LOGIC LATER]
             # Tool.create_poly_lyr(m, group_lyr, speciesid)
-            # aprx.save()  # save the Pro project
+            # # aprx.save()  # save the Pro project
 
             # Create the eo layer by calling the create_lyr() function
             Tool.create_lyr(m, group_lyr, speciesid, 'EO_Polygon')
-            aprx.save()  # save the Pro project
+            # aprx.save()  # save the Pro project
 
             # # FIND ALL RELATED RECORDS THAT NEED TO BE PROCESSED .....................................................
             # Assign sql query variable related to the species id
@@ -379,34 +379,33 @@ class Tool:
                             # # USE FUNCTIONS TO CREATE GROUP LAYER AND ALL POINTS/LINES/POLY/EOS LAYERS -------------
                             # Create the group layer by calling the create_group_lyr() function
                             group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name)
-                            aprx.save()  # save the Pro project
+                            # aprx.save()  # save the Pro project
 
                             # # USE THE SAME FUNCTION TO CREATE ALL POINTS/LINES/EOS
                             # Create the point layer by calling the create_lyr() function
                             Tool.create_lyr(m, group_lyr, speciesid, 'InputPoint')
-                            aprx.save()  # save the Pro project
+                            # aprx.save()  # save the Pro project
 
                             # Create the line layer by calling the create_lyr() function
                             Tool.create_lyr(m, group_lyr, speciesid, 'InputLine')
-                            aprx.save()  # save the Pro project
+                            # aprx.save()  # save the Pro project
 
                             # Create the polygon layer by calling the create_lyr() function
                             Tool.create_lyr(m, group_lyr, speciesid, 'InputPolygon')
-                            aprx.save()  # save the Pro project
+                            # aprx.save()  # save the Pro project
 
                             # # Create the polygon layer by calling the create_poly_lyr() function [KEEP FOR LATER]
                             # Tool.create_poly_lyr(m, group_lyr, speciesid)
-                            # aprx.save()  # save the Pro project
+                            # # aprx.save()  # save the Pro project
 
                             # Create the eo layer by calling the create_lyr() function
                             Tool.create_lyr(m, group_lyr, speciesid, 'EO_Polygon')
 
-                    aprx.save()  # save the Pro project for the freshly processed species record
-
-                aprx.save()  # save the Pro project after processing all additional species
+                    # aprx.save()  # save the Pro project for the freshly processed species record
+                # aprx.save()  # save the Pro project after processing all additional species
 
             m.clearSelection()  # clear all selections
-            aprx.save()  # save the Pro project
+            # aprx.save()  # save the Pro project after all processing is complete
 
             arcpy.AddMessage("End of script.")
 
@@ -470,7 +469,7 @@ if __name__ == '__main__':
 
     param_table.value = "BIOTICS_ELEMENT_NATIONAL"  # run local & server. User-friendly SQL statements.
     param_sql.value = "national_scientific_name = 'Abronia latifolia'"
-    param_infraspecies = "Yes"
+    param_infraspecies = "No"
 
     parameters = [param_table, param_sql, param_infraspecies]
 

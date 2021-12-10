@@ -69,7 +69,8 @@ class ToolSpeciesSelection(object):
         # Yes/No parameter
         param_infraspecies = arcpy.Parameter(
             displayName='If you selected an infraspecies, do you want to process the full species as well?'
-                        '\n\nNote: If you selected a full species, all infraspecies will be processed by default.',
+                        '\nNote: If you selected a full species, all infraspecies will be included and '
+                        'this dropdown menu will be ignored.',
             name='infraspecies',
             datatype='GPString',
             parameterType='Required',
@@ -79,7 +80,7 @@ class ToolSpeciesSelection(object):
         param_infraspecies.filter.list = ["Yes", "No"]
 
         # Default selection
-        param_infraspecies.value = "Yes"
+        param_infraspecies.value = "No"
 
         params = [param_table, param_sql, param_infraspecies]
         return params
