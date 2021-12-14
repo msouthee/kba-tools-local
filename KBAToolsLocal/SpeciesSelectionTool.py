@@ -36,6 +36,10 @@ class SpeciesDataError(Exception):
     pass
 
 
+# Define custom exception for error handling
+class DefQueryError(Exception):
+    pass
+
 # Define class called Tool
 class Tool:
     """Select all points, lines and polygons for a specific species."""
@@ -188,6 +192,16 @@ class Tool:
 
             else:
                 raise SpeciesDataError
+
+            # Error handling to check for active definition queries
+            for lyr in m.listLayers():
+                # Add logic to only check the point/line/poly/eo layers
+                if lyr.name in ("InputPoint", "InputLine", "InputPolygon", "EO_Polygon"):
+                    # Check if the layer supports a definition query [REDUNDANT]
+                    if lyr.supports("DEFINITIONQUERY"):
+                        # Check if the definition query is active
+                        if lyr.definitionQuery != '':
+                            raise DefQueryError
 
             # # START PROCESSING
             # Select the record in BIOTICS table based on the user-specified sql expression
@@ -426,6 +440,11 @@ class Tool:
         except SpeciesDataError:
             arcpy.AddError("SpeciesData (Group Layer) or InputPoint/InputLine/InputPolygon/EO_Polygon layers "
                            "do not exist. Re-load original SpeciesData from WCSC-KBA Map Template.")
+
+        # Error handling for custom error related to SpeciesData group layer not existing
+        except DefQueryError:
+            arcpy.AddError("{} has an active definition query.  "
+                           "Turn off all active definition queries to run the tool.".format(lyr.name))
 
         # Error handling if an error occurs while using a Geoprocessing Tool in the script
         except arcpy.ExecuteError:
