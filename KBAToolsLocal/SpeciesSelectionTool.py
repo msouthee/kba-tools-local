@@ -6,19 +6,15 @@
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
-# Purpose:          Create definition queries and group the output datasets (with valid data) under a species heading
-#                   in the TOC in the active map.
+# Purpose:          Create definition queries and add the output data layers (with valid data) under a species heading
+#                   into the TOC in the active map.  Process data for unique species records individually using an
+#                   EQUALS statement.  Contains logic to process full species and/or infraspecies differently.
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Import libraries
 import arcpy
 import sys
 import traceback
-
-
-# Define custom exception for error handling
-class BioticsSQLError(Exception):
-    pass
 
 
 # Define custom exception for error handling
@@ -32,12 +28,17 @@ class SpeciesTableError(Exception):
 
 
 # Define custom exception for error handling
+class DefQueryError(Exception):
+    pass
+
+
+# Define custom exception for error handling
 class SpeciesDataError(Exception):
     pass
 
 
 # Define custom exception for error handling
-class DefQueryError(Exception):
+class BioticsSQLError(Exception):
     pass
 
 
@@ -180,20 +181,6 @@ class Tool:
             else:
                 raise SpeciesTableError
 
-            # Error handling to check for existence of the "SpeciesData" group lyr
-            if len(m.listLayers("SpeciesData")) > 0:
-                # Get the existing SpeciesDate group layer as a layer object
-                group_lyr = m.listLayers("SpeciesData")[0]
-
-                # Write a copy of the SpeciesData group layer to the user's scratch folder
-                arcpy.SaveToLayerFile_management(group_lyr, scratch + "\\species_group.lyrx")
-
-                # Create a layer file from the scratch workspace
-                new_group_lyr = arcpy.mp.LayerFile(scratch + "\\species_group.lyrx")
-
-            else:
-                raise SpeciesDataError
-
             # Error handling to check for active definition queries in the Input* (Point/Line/Polygon) layers
             for lyr in m.listLayers("Input*"):
                 # Check if the layer supports a definition query
@@ -213,6 +200,20 @@ class Tool:
                         raise DefQueryError
                     else:
                         pass
+
+            # Error handling to check for existence of the "SpeciesData" group lyr
+            if len(m.listLayers("SpeciesData")) > 0:
+                # Get the existing SpeciesDate group layer as a layer object
+                group_lyr = m.listLayers("SpeciesData")[0]
+
+                # Write a copy of the SpeciesData group layer to the user's scratch folder
+                arcpy.SaveToLayerFile_management(group_lyr, scratch + "\\species_group.lyrx")
+
+                # Create a layer file from the scratch workspace
+                new_group_lyr = arcpy.mp.LayerFile(scratch + "\\species_group.lyrx")
+
+            else:
+                raise SpeciesDataError
 
             # # START PROCESSING
             # Select the record in BIOTICS table based on the user-specified sql expression
@@ -256,38 +257,35 @@ class Tool:
             # Exit the search cursor, but keep the variables from inside the search cursor.
             del row, biotics_cursor
 
+            """This section is going to change in the 2nd tool, so that logic can be implemented to group all records
+            for a full species & its infraspecies into one output group in the TOC."""
+
             # # USE FUNCTIONS TO CREATE GROUP LAYER AND ALL POINTS/LINES/POLY/EOS LAYERS ----------------------------
             # Create the group layer by calling the create_group_lyr() function
             group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name)
-            # aprx.save()  # save the Pro project
 
             # # USE THE SAME FUNCTION TO CREATE ALL POINTS/LINES/EOS
             # Create the point layer by calling the create_lyr() function
             Tool.create_lyr(m, group_lyr, speciesid, 'InputPoint')
-            # aprx.save()  # save the Pro project
 
             # Create the line layer by calling the create_lyr() function
             Tool.create_lyr(m, group_lyr, speciesid, 'InputLine')
-            # aprx.save()  # save the Pro project
 
-            # Create the polygon layer by calling the create_lyr() function
+            # Create the polygon layer by calling the create_lyr() function [MODIFY TO REMOVE RANGE / CRITICAL HABITAT]
             Tool.create_lyr(m, group_lyr, speciesid, 'InputPolygon')
-            # aprx.save()  # save the Pro project
 
-            # # Create the polygon layer by calling the create_poly_lyr() function [KEEP FOR ADDITIONAL LOGIC LATER]
+            # # Create the polygon layer by calling the create_poly_lyr() function [WRITE PROCESSING FOR RANGE / HABITAT]
             # Tool.create_poly_lyr(m, group_lyr, speciesid)
-            # # aprx.save()  # save the Pro project
 
             # Create the eo layer by calling the create_lyr() function
             Tool.create_lyr(m, group_lyr, speciesid, 'EO_Polygon')
-            # aprx.save()  # save the Pro project
 
             # # FIND ALL RELATED RECORDS THAT NEED TO BE PROCESSED .....................................................
             # Assign sql query variable related to the species id
             speciesid_sql = "speciesid = {}".format(speciesid)
 
             # Check to see if the initial selected record is a full species or an infraspecies
-            # If the user selects a full species, process all sub/infraspecies for this species
+            # If the user selects a full species, process all sub/infraspecies for this species [INDIVIDUALLY]
             if s_level.lower() == "species":
                 arcpy.AddMessage("Full species selected. Process all infraspecies (if they exist).")
 
@@ -321,7 +319,7 @@ class Tool:
             elif s_level.lower() in ("subspecies", "population", "variety"):
 
                 # Check if user wants to select the infraspecies & full species [based on param_infraspecies]
-                # Logic to select additional records based on element_code
+                # Logic to select full species based on element_code variables
                 if param_infraspecies == "Yes":
 
                     # Select initial record from Species table based on the speciesid
@@ -369,7 +367,7 @@ class Tool:
             # Delete the old variables from the biotics record
             del speciesid, element_code, s_level, sci_name, common_name
 
-            # PROCESS THE ADDITIONAL RECORDS USING THE SPECIESID_LIST [METHOD 2 - IMPLEMENTED] .........................
+            # PROCESS THE ADDITIONAL RECORDS USING THE SPECIESID_LIST [ IMPLEMENTED] .........................
             if len(speciesid_list) < 1:
                 arcpy.AddMessage("No additional records to process.")
                 pass  # Do nothing and go to end of script
@@ -404,34 +402,24 @@ class Tool:
                             # # USE FUNCTIONS TO CREATE GROUP LAYER AND ALL POINTS/LINES/POLY/EOS LAYERS -------------
                             # Create the group layer by calling the create_group_lyr() function
                             group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name)
-                            # aprx.save()  # save the Pro project
 
                             # # USE THE SAME FUNCTION TO CREATE ALL POINTS/LINES/EOS
                             # Create the point layer by calling the create_lyr() function
                             Tool.create_lyr(m, group_lyr, speciesid, 'InputPoint')
-                            # aprx.save()  # save the Pro project
 
                             # Create the line layer by calling the create_lyr() function
                             Tool.create_lyr(m, group_lyr, speciesid, 'InputLine')
-                            # aprx.save()  # save the Pro project
 
                             # Create the polygon layer by calling the create_lyr() function
                             Tool.create_lyr(m, group_lyr, speciesid, 'InputPolygon')
-                            # aprx.save()  # save the Pro project
 
-                            # # Create the polygon layer by calling the create_poly_lyr() function [KEEP FOR LATER]
+                            # # Create the polygon layer by calling the create_poly_lyr() function [UPDATE]
                             # Tool.create_poly_lyr(m, group_lyr, speciesid)
-                            # # aprx.save()  # save the Pro project
 
                             # Create the eo layer by calling the create_lyr() function
                             Tool.create_lyr(m, group_lyr, speciesid, 'EO_Polygon')
 
-                    # aprx.save()  # save the Pro project for the freshly processed species record
-                # aprx.save()  # save the Pro project after processing all additional species
-
             m.clearSelection()  # clear all selections
-            # aprx.save()  # save the Pro project after all processing is complete
-
             arcpy.AddMessage("End of script.")
 
         # Error handling for custom input error related to the biotics SQL statement
@@ -459,6 +447,9 @@ class Tool:
 
         # Error handling if an error occurs while using a Geoprocessing Tool in the script
         except arcpy.ExecuteError:
+            # If the script crashes, remove the group layer
+            m.removeLayer(group_lyr)
+
             # Get the tool error messages
             msgs = arcpy.GetMessages(2)
 
@@ -470,6 +461,9 @@ class Tool:
 
         # Error handling if the script fails for other unexplained reasons
         except:
+            # If the script crashes, remove the group layer
+            m.removeLayer(group_lyr)
+
             # Get the traceback object
             tb = sys.exc_info()[2]
             tbinfo = traceback.format_tb(tb)[0]
