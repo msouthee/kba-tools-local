@@ -49,9 +49,9 @@ class Tool:
     def __init__(self):
         pass
 
+    """These functions are called from within the run_tool function. The first parameter should be self, 
+    but I don't understand how to get this to work properly."""
     # Define a function to create the group layer for a selected record (Function = reusable piece of code)
-    # This function will be called from within the run_tool function
-    # The first parameter should be self, but I don't understand how to get it work properly
     def create_group_lyr(m, grp_lyr, sp_com_name, sp_sci_name):
         arcpy.AddMessage("Run create_group_lyr function.")
 
@@ -70,7 +70,7 @@ class Tool:
 
         return group_lyr
 
-    # Define a function to create the InputPoint layer for the species
+    # Define a function to create the InputPoint/Line/EO layer for the species
     def create_lyr(m, grp_lyr, speciesid, ft_type):
         arcpy.AddMessage("Run create_lyr function for {}.".format(ft_type))
 
@@ -98,7 +98,7 @@ class Tool:
         else:
             raise SpeciesDataError
 
-    # Define a function to create the InputPolygon layer for the species
+    # Define a function to create the InputPolygon layer for the species [Add logic for range / critical habitat]
     def create_poly_lyr(m, grp_lyr, speciesid):
         arcpy.AddMessage("Run create_poly_lyr function.")
 
@@ -163,7 +163,7 @@ class Tool:
             scratch = arcpy.env.scratchFolder
             arcpy.AddMessage("Scratch folder: {}".format(scratch))
 
-            # # ERROR HANDLING TO CHECK THAT THE MAP CONTAINS THE NECESSARY TABLES AND DATA LAYERS
+            # # ERROR HANDLING TO CHECK THAT THE MAP CONTAINS THE NECESSARY TABLES AND DATA LAYERS ...................
             # Error handling to ensure that the Biotics table exists
             if arcpy.Exists("BIOTICS_ELEMENT_NATIONAL"):
                 arcpy.AddMessage("BIOTICS_ELEMENT_NATIONAL table exists.")
@@ -215,7 +215,7 @@ class Tool:
             else:
                 raise SpeciesDataError
 
-            # # START PROCESSING
+            # # START PROCESSING .....................................................................................
             # Select the record in BIOTICS table based on the user-specified sql expression
             biotics_record = arcpy.management.SelectLayerByAttribute(param_table, "NEW_SELECTION", param_sql)
 
@@ -254,7 +254,7 @@ class Tool:
                     arcpy.AddMessage("Species Level: {}".format(s_level))
                     arcpy.AddMessage("Element Code: {}".format(element_code))
 
-            # Exit the search cursor, but keep the variables from inside the search cursor.
+            # Exit the search cursor, but keep the variables from inside the search cursor
             del row, biotics_cursor
 
             """This section is going to change in the 2nd tool, so that logic can be implemented to group all records
@@ -271,14 +271,47 @@ class Tool:
             # Create the line layer by calling the create_lyr() function
             Tool.create_lyr(m, group_lyr, speciesid, 'InputLine')
 
-            # Create the polygon layer by calling the create_lyr() function [MODIFY TO REMOVE RANGE / CRITICAL HABITAT]
-            Tool.create_lyr(m, group_lyr, speciesid, 'InputPolygon')
-
-            # # Create the polygon layer by calling the create_poly_lyr() function [WRITE PROCESSING FOR RANGE / HABITAT]
-            # Tool.create_poly_lyr(m, group_lyr, speciesid)
-
             # Create the eo layer by calling the create_lyr() function
             Tool.create_lyr(m, group_lyr, speciesid, 'EO_Polygon')
+
+            # # Create the polygon layer by calling the create_lyr() function [OLD LOGIC]
+            # Tool.create_lyr(m, group_lyr, speciesid, 'InputPolygon')
+
+            # # USE DIFFERENT FUNCTION TO CREATE THE POLYGON DATA BECAUSE OF LOGIC FOR RANGE MAPS / CRITICAL HABITAT
+            # # Create the polygon layer by calling the create_poly_lyr() function [ADD LOGIC FOR RANGE / HABITAT]
+            # Tool.create_poly_lyr(m, group_lyr, speciesid)
+
+            # Write the logic here that is needed to process polygons w/ & w/out range maps / critical habitat, then
+            # make a function out of it.
+
+            # Naming convention for polygon layer = InputPolygon_SpeciesID
+            lyr_name = "InputPolygon_{}".format(speciesid)
+
+            if len(m.listLayers("InputPolygon")) > 0:
+                lyr = m.listLayers("InputPolygon")[0]
+
+
+                # Add logic to NOT select data from range maps & critical habitat
+
+
+                # Make a new feature layer with sql query and added .getOutput(0) function [OLD LOGIC]
+                new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, "speciesid = {}".format(speciesid),
+                                                            None).getOutput(0)
+
+                # Get a count of the records in the new feature layer
+                row_count = int(arcpy.GetCount_management(new_lyr).getOutput(0))
+
+                # Check to see if there are any records for the species
+                if row_count != 0:
+                    m.addLayerToGroup(group_lyr, new_lyr, "TOP")  # Add the new poly layer
+                else:
+                    pass  # Do nothing
+
+                m.removeLayer(lyr)  # remove old poly layer
+
+            else:
+                raise SpeciesDataError
+
 
             # # FIND ALL RELATED RECORDS THAT NEED TO BE PROCESSED .....................................................
             # Assign sql query variable related to the species id
@@ -410,14 +443,16 @@ class Tool:
                             # Create the line layer by calling the create_lyr() function
                             Tool.create_lyr(m, group_lyr, speciesid, 'InputLine')
 
-                            # Create the polygon layer by calling the create_lyr() function
-                            Tool.create_lyr(m, group_lyr, speciesid, 'InputPolygon')
-
-                            # # Create the polygon layer by calling the create_poly_lyr() function [UPDATE]
-                            # Tool.create_poly_lyr(m, group_lyr, speciesid)
-
                             # Create the eo layer by calling the create_lyr() function
                             Tool.create_lyr(m, group_lyr, speciesid, 'EO_Polygon')
+
+                            # # Create the polygon layer by calling the create_lyr() function [OLD LOGIC]
+                            # Tool.create_lyr(m, group_lyr, speciesid, 'InputPolygon')
+
+                            # # Create the polygon layer by calling the create_poly_lyr() function [UPDATE!!!]
+                            # Tool.create_poly_lyr(m, group_lyr, speciesid)
+
+
 
             m.clearSelection()  # clear all selections
             arcpy.AddMessage("End of script.")
