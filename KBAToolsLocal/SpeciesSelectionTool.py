@@ -2,7 +2,7 @@
 # Script Name:      SpeciesSelectionTool.py
 #
 # Script Created:   2021-10-27
-# Last Updated:     2021-12-07
+# Last Updated:     2021-12-14
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
@@ -39,6 +39,7 @@ class SpeciesDataError(Exception):
 # Define custom exception for error handling
 class DefQueryError(Exception):
     pass
+
 
 # Define class called Tool
 class Tool:
@@ -193,15 +194,25 @@ class Tool:
             else:
                 raise SpeciesDataError
 
-            # Error handling to check for active definition queries
-            for lyr in m.listLayers():
-                # Add logic to only check the point/line/poly/eo layers
-                if lyr.name in ("InputPoint", "InputLine", "InputPolygon", "EO_Polygon"):
-                    # Check if the layer supports a definition query [REDUNDANT]
-                    if lyr.supports("DEFINITIONQUERY"):
-                        # Check if the definition query is active
-                        if lyr.definitionQuery != '':
-                            raise DefQueryError
+            # Error handling to check for active definition queries in the Input* (Point/Line/Polygon) layers
+            for lyr in m.listLayers("Input*"):
+                # Check if the layer supports a definition query
+                if lyr.supports("DEFINITIONQUERY"):
+                    # Check if there is an active definition query on any of these layers
+                    if lyr.definitionQuery != '':
+                        raise DefQueryError
+                    else:
+                        pass
+
+            # Error handling to check for active definition queries in the EO* (EO_Polygon) layer
+            for lyr in m.listLayers("EO*"):
+                # Check if the layer supports a definition query
+                if lyr.supports("DEFINITIONQUERY"):
+                    # Check if there is an active definition query on any of these layers
+                    if lyr.definitionQuery != '':
+                        raise DefQueryError
+                    else:
+                        pass
 
             # # START PROCESSING
             # Select the record in BIOTICS table based on the user-specified sql expression
