@@ -341,18 +341,13 @@ class Tool:
             """This section is going to change in the 2nd tool, so that logic can be implemented to group all records
             for a full species & its infraspecies into one output group in the TOC."""
 
-            # # USE FUNCTIONS TO CREATE GROUP LAYER AND ALL POINTS/LINES/POLY/EOS LAYERS ...............................
+            # # USE FUNCTIONS TO CREATE GROUP LAYER AND POINTS/LINES/EOS LAYERS ........................................
             # Create the group layer by calling the create_group_lyr() function
             group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name)
 
-            # # USE THE SAME FUNCTION TO CREATE ALL POINTS/LINES/EOS
-            # Create the point layer by calling the create_lyr() function
+            # Call the create_lyr() function x3 to create the point, lines & EO Layers
             Tool.create_lyr(m, group_lyr, speciesid, 'InputPoint')
-
-            # Create the line layer by calling the create_lyr() function
             Tool.create_lyr(m, group_lyr, speciesid, 'InputLine')
-
-            # Create the eo layer by calling the create_lyr() function
             Tool.create_lyr(m, group_lyr, speciesid, 'EO_Polygon')
 
             # # CREATE LISTS OF INPUT DATASET ID VALUES FOR RANGE MAPS AND CRITICAL HABITAT DATASETS ...................
@@ -418,13 +413,8 @@ class Tool:
             Tool.create_poly_lyr(m, group_lyr, speciesid, range_and_crit_habitat_list)
 
             # # Call the create_range_lyr() function x3 to process the range maps and critical habitat data
-            # Call the function to create the ECCC Range layer. The function will check if there are valid records
             Tool.create_range_lyr(m, group_lyr, speciesid, "ECCCRangeMaps", eccc_range_data_list)
-
-            # Call the function to create the IUCN Range layer. The function will check if there are valid records
             Tool.create_range_lyr(m, group_lyr, speciesid, "IUCNRangeMaps", iucn_range_data_list)
-
-            # Call the function to create the ECCC critical habitat layer.
             Tool.create_range_lyr(m, group_lyr, speciesid, "ECCCCriticalHabitat", crit_habitat_data_list)
 
             # # FIND ALL RELATED RECORDS THAT NEED TO BE PROCESSED .....................................................
@@ -550,21 +540,19 @@ class Tool:
                             # Create the group layer by calling the create_group_lyr() function
                             group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name)
 
-                            # # USE THE SAME FUNCTION TO CREATE ALL POINTS/LINES/EOS
-                            # Create the point layer by calling the create_lyr() function
+                            # Call the create_lyr() function x3 for points, lines & EOs
                             Tool.create_lyr(m, group_lyr, speciesid, 'InputPoint')
-
-                            # Create the line layer by calling the create_lyr() function
                             Tool.create_lyr(m, group_lyr, speciesid, 'InputLine')
-
-                            # Create the eo layer by calling the create_lyr() function
                             Tool.create_lyr(m, group_lyr, speciesid, 'EO_Polygon')
 
-                            # # Create the polygon layer by calling the create_lyr() function [OLD LOGIC]
-                            # Tool.create_lyr(m, group_lyr, speciesid, 'InputPolygon')
+                            # Call the function to create the InputPolygon layer w/out Range & Critical Habitat data
+                            Tool.create_poly_lyr(m, group_lyr, speciesid, range_and_crit_habitat_list)
 
-                            # # Create the polygon layer by calling the create_poly_lyr() function [UPDATE!!!]
-                            # Tool.create_poly_lyr(m, group_lyr, speciesid)
+                            # # Call the create_range_lyr() function x3 for range maps and critical habitat data
+                            Tool.create_range_lyr(m, group_lyr, speciesid, "ECCCRangeMaps", eccc_range_data_list)
+                            Tool.create_range_lyr(m, group_lyr, speciesid, "IUCNRangeMaps", iucn_range_data_list)
+                            Tool.create_range_lyr(m, group_lyr, speciesid, "ECCCCriticalHabitat",
+                                                  crit_habitat_data_list)
 
             m.clearSelection()  # clear all selections
             arcpy.AddMessage("End of script.")
