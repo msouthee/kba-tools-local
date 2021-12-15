@@ -18,33 +18,43 @@ import sys
 import traceback
 
 
-# Define custom exception for error handling
-class BioticsTableError(Exception):
+class NoDataError(Exception):
+    """Exception raised for NoDataError in the tool."""
     pass
 
 
-# Define custom exception for error handling
-class SpeciesTableError(Exception):
+class NoTableError(Exception):
+    """Exception raised for NoDataError in the tool."""
     pass
 
 
-# Define custom exception for error handling
-class InputDatasetTableError(Exception):
-    pass
-
-
-# Define custom exception for error handling
 class DefQueryError(Exception):
+    """Exception raised for DefQueryError in the tool."""
     pass
 
 
-# Define custom exception for error handling
 class SpeciesDataError(Exception):
+    """Exception raised for SpeciesDataError in the tool."""
     pass
 
 
-# Define custom exception for error handling
+# class BioticsTableError(Exception):
+#     """Exception raised for BioticsTableError in the tool."""
+#     pass
+#
+#
+# class SpeciesTableError(Exception):
+#     """Exception raised for SpeciesTableError in the tool."""
+#     pass
+#
+#
+# class InputDatasetTableError(Exception):
+#     """Exception raised for InputDatasetTableError in the tool."""
+#     pass
+
+
 class BioticsSQLError(Exception):
+    """Exception raised for BioticsSQLError in the tool."""
     pass
 
 
@@ -222,27 +232,90 @@ class Tool:
             arcpy.AddMessage("Scratch folder: {}".format(scratch))
 
             # # ERROR HANDLING TO CHECK THAT THE MAP CONTAINS THE NECESSARY TABLES AND DATA LAYERS ...................
-            # Error handling to ensure that the Biotics table exists
-            if arcpy.Exists("BIOTICS_ELEMENT_NATIONAL"):
-                arcpy.AddMessage("BIOTICS_ELEMENT_NATIONAL table exists.")
+            # # Error handling to ensure that the Biotics table exists
+            # if arcpy.Exists("BIOTICS_ELEMENT_NATIONAL"):
+            #     arcpy.AddMessage("BIOTICS_ELEMENT_NATIONAL table exists.")
+            #
+            # else:
+            #     raise BioticsTableError
+            #
+            # # Error handling to ensure that the InputDataset table exists
+            # if arcpy.Exists("InputDataset"):
+            #     arcpy.AddMessage("InputDataset table exists.")
+            #
+            # else:
+            #     raise InputDatasetTableError
+            #
+            # # Error handling to ensure that the Species table exists
+            # if arcpy.Exists("Species (view only)"):
+            #     arcpy.AddMessage("Species (view only) table exists.")
+            #     species_table = "Species (view only)"
+            #
+            # else:
+            #     raise SpeciesTableError
 
-            else:
-                raise BioticsTableError
+            # Error handling to check for existence of required data layers in the current map
+            # Create a list of the datasets to check that they exist and don't have active definition query
+            dataset_list = ["InputPoint", "InputLine", "InputPolygon", "EO_Polygon"]
 
-            # Error handling to ensure that the Species table exists
-            if arcpy.Exists("Species (view only)"):
-                arcpy.AddMessage("Species (view only) table exists.")
-                species_table = "Species (view only)"
+            # Iterate through the list of dataset names
+            for dataset in dataset_list:
 
-            else:
-                raise SpeciesTableError
+                # Check to see if a dataset layer with that name exists in the map
+                if len(m.listLayers(dataset)) > 0:
+                    arcpy.AddMessage("{} dataset exists.".format(dataset))
 
-            # Error handling to ensure that the InputDataset table exists
-            if arcpy.Exists("InputDataset"):
-                arcpy.AddMessage("InputDataset table exists.")
+                    # Create a layer variable out of the current dataset
+                    lyr = m.listLayers(dataset)[0]
 
-            else:
-                raise InputDatasetTableError
+                    # Check if the layer supports a definition query
+                    if lyr.supports("DEFINITIONQUERY"):
+                        arcpy.AddMessage("{} support def query.".format(dataset))
+
+                        # Check if there is an active definition query on any of the layer
+                        if lyr.definitionQuery != '':
+
+                            # Raise custom DefQueryError if there is a definition query
+                            raise DefQueryError
+
+                        else:
+                            pass
+
+                    else:
+                        pass
+
+                else:
+                    # Raise the custom NoDataError if the dataset doesn't exist. Pass the dataset name to the error.
+                    raise NoDataError
+
+            # Error handling to check for existence of required data tables in the current map
+            # Create a list of the tables to check that they exist and don't have active definition query
+            table_list = ["BIOTICS_ELEMENT_NATIONAL", "Species (view only)", "InputDataset"]
+
+            # Iterate through the list of table names
+            for table in table_list:
+                # Error handling to ensure that the required tables exists in the map
+                if arcpy.Exists(table):
+                    arcpy.AddMessage("{} table exists.".format(table))
+
+                    # Create a layer variable out of the current table
+                    lyr = m.listTables(table)[0]
+
+                    # # Check if the layer supports a definition query
+                    # if lyr.supports("DEFINITIONQUERY"):
+                    #     arcpy.AddMessage("{} support def query.".format(table))
+
+                    # Check if there is an active definition query on any of the layer
+                    if lyr.definitionQuery != '':
+
+                        # Raise custom DefQueryError if there is a definition query
+                        raise DefQueryError
+
+                    else:
+                        pass
+
+                else:
+                    raise NoTableError
 
             # Error handling to check for existence of the "SpeciesData" group lyr
             if len(m.listLayers("SpeciesData")) > 0:
@@ -258,25 +331,45 @@ class Tool:
             else:
                 raise SpeciesDataError
 
-            # Error handling to check for active definition queries in the Input* (Point/Line/Polygon) layers
-            for lyr in m.listLayers("Input*"):
-                # Check if the layer supports a definition query
-                if lyr.supports("DEFINITIONQUERY"):
-                    # Check if there is an active definition query on any of these layers
-                    if lyr.definitionQuery != '':
-                        raise DefQueryError
-                    else:
-                        pass
 
-            # Error handling to check for active definition queries in the EO* (EO_Polygon) layer
-            for lyr in m.listLayers("EO*"):
-                # Check if the layer supports a definition query
-                if lyr.supports("DEFINITIONQUERY"):
-                    # Check if there is an active definition query on any of these layers
-                    if lyr.definitionQuery != '':
-                        raise DefQueryError
-                    else:
-                        pass
+            # if arcpy.Exists("InputPoint"):
+            #     lyr = m.listLayers("InputPoint")[0]
+            #     # Check if the layer supports a definition query
+            #     if lyr.supports("DEFINITIONQUERY"):
+            #         # Check if there is an active definition query on any of these layers
+            #         if lyr.definitionQuery != '':
+            #             # Raise error if there is a definition query
+            #             raise DefQueryError
+            #         else:
+            #             pass
+            #     else:
+            #         pass
+            # else:
+            #     # Try to raise a generic NoDataError and pass the name to the exception by assigning it as a variable
+            #     # right before you raise the error.
+            #     dataset = "InputPoint"
+            #     raise NoDataError
+
+
+            # # Error handling to check for active definition queries in the Input* (Point/Line/Polygon) layers
+            # for lyr in m.listLayers("Input*"):
+            #     # Check if the layer supports a definition query
+            #     if lyr.supports("DEFINITIONQUERY"):
+            #         # Check if there is an active definition query on any of these layers
+            #         if lyr.definitionQuery != '':
+            #             raise DefQueryError
+            #         else:
+            #             pass
+            #
+            # # Error handling to check for active definition queries in the EO* (EO_Polygon) layer
+            # for lyr in m.listLayers("EO*"):
+            #     # Check if the layer supports a definition query
+            #     if lyr.supports("DEFINITIONQUERY"):
+            #         # Check if there is an active definition query on any of these layers
+            #         if lyr.definitionQuery != '':
+            #             raise DefQueryError
+            #         else:
+            #             pass
 
             # # START PROCESSING .....................................................................................
             # Select the record in BIOTICS table based on the user-specified sql expression
@@ -413,8 +506,9 @@ class Tool:
             Tool.create_range_lyr(m, group_lyr, speciesid, "ECCCCriticalHabitat", crit_habitat_data_list)
 
             # # FIND ALL RELATED RECORDS THAT NEED TO BE PROCESSED .....................................................
-            # Assign sql query variable related to the species id
+            # Assign variables related to the species table and the species id sql statement
             speciesid_sql = "speciesid = {}".format(speciesid)
+            species_table = "Species (view only)"
 
             # Check to see if the initial selected record is a full species or an infraspecies
             # If the user selects a full species, process all sub/infraspecies for this species [INDIVIDUALLY]
@@ -553,34 +647,44 @@ class Tool:
             m.clearSelection()  # clear all selections
             arcpy.AddMessage("End of script.")
 
-        # Error handling for custom input error related to the biotics SQL statement
-        except BioticsSQLError:
-            arcpy.AddError("Incorrect sql statement. See Messages for more details.")
+        # # Error handling for custom input error related to the biotics SQL statement
+        # except BioticsTableError:
+        #     arcpy.AddError("BIOTICS_ELEMENT_NATIONAL table does not exist. "
+        #                    "Re-load original Species table from WCSC-KBA Map Template.")
+        #
+        # # Error handling for custom input error related to the biotics SQL statement
+        # except SpeciesTableError:
+        #     arcpy.AddError("Species (view only) table does not exist. "
+        #                    "Re-load original Species table from WCSC-KBA Map Template.")
+        #
+        # # Error handling for custom input error related to the biotics SQL statement
+        # except InputDatasetTableError:
+        #     arcpy.AddError("InputDataset table does not exist. "
+        #                    "Re-load original Species table from WCSC-KBA Map Template.")
 
-        # Error handling for custom input error related to the biotics SQL statement
-        except BioticsTableError:
-            arcpy.AddError("BIOTICS_ELEMENT_NATIONAL table does not exist. "
-                           "Re-load original Species table from WCSC-KBA Map Template.")
+        # Error handling for custom error related to required data layers in the map
+        except NoDataError:
+            arcpy.AddError("{} Layer does not exist. "
+                           "Re-load {} from WCSC-KBA Map Template.".format(dataset, dataset))
 
-        # Error handling for custom input error related to the biotics SQL statement
-        except SpeciesTableError:
-            arcpy.AddError("Species (view only) table does not exist. "
-                           "Re-load original Species table from WCSC-KBA Map Template.")
+        # Error handling for custom error related to required data tables in the map
+        except NoTableError:
+            arcpy.AddError("{} Table does not exist. "
+                           "Re-load {} from WCSC-KBA Map Template.".format(table, table))
 
-        # Error handling for custom input error related to the biotics SQL statement
-        except InputDatasetTableError:
-            arcpy.AddError("InputDataset table does not exist. "
-                           "Re-load original Species table from WCSC-KBA Map Template.")
+        # Error handling for custom error related to active definition queries on required layers
+        except DefQueryError:
+            arcpy.AddError("{} has an active definition query. "
+                           "Turn off all active definition queries on {} to run the tool.".format(lyr.name, lyr.name))
 
         # Error handling for custom error related to SpeciesData group layer not existing
         except SpeciesDataError:
             arcpy.AddError("SpeciesData (Group Layer) does not exist. "
                            "Re-load original SpeciesData from WCSC-KBA Map Template.")
 
-        # Error handling for custom error related to SpeciesData group layer not existing
-        except DefQueryError:
-            arcpy.AddError("{} has an active definition query.  "
-                           "Turn off all active definition queries to run the tool.".format(lyr.name))
+        # Error handling for custom input error related to the biotics SQL statement
+        except BioticsSQLError:
+            arcpy.AddError("Incorrect sql statement. See Messages for more details.")
 
         # Error handling if an error occurs while using a Geoprocessing Tool in the script
         except arcpy.ExecuteError:
