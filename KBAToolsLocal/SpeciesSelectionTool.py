@@ -71,7 +71,7 @@ class Tool:
         group_lyr = m.listLayers("SpeciesData")[0]
         group_lyr.name = grp_lyr_name  # rename the group layer in TOC
         group_lyr = m.listLayers(grp_lyr_name)[0]
-        group_lyr.isVisible = False  # turn off the visibility for the group layer
+        group_lyr.visible = False  # Turn off the visibility for the group layer
 
         return group_lyr
 
@@ -95,6 +95,8 @@ class Tool:
             # Check to see if there are any records for the species
             if row_count != 0:
                 m.addLayerToGroup(grp_lyr, new_lyr, "BOTTOM")  # Add the new layer
+                new_lyr = m.listLayers(lyr_name)[0]
+                new_lyr.visible = False  # Turn off the visibility for the new layer
             else:
                 pass  # Do nothing
 
@@ -129,6 +131,8 @@ class Tool:
             # Check to see if there are any records for the species
             if row_count != 0:
                 m.addLayerToGroup(grp_lyr, new_lyr, "BOTTOM")  # Add the new poly layer
+                new_lyr = m.listLayers(lyr_name)[0]
+                new_lyr.visible = False  # Turn off the visibility for the new layer
             else:
                 pass  # Do nothing
 
@@ -164,6 +168,8 @@ class Tool:
             # Check to see if there are any records for the species and the Range / Critical Habitat type
             if row_count != 0:
                 m.addLayerToGroup(grp_lyr, new_lyr, "BOTTOM")  # Add the new range / critical habitat layer
+                new_lyr = m.listLayers(lyr_name)[0]
+                new_lyr.visible = False  # Turn off the visibility for the new layer
             else:
                 pass  # Do nothing
 
