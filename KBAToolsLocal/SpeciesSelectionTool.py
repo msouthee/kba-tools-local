@@ -2,7 +2,7 @@
 # Script Name:      SpeciesSelectionTool.py
 #
 # Script Created:   2021-10-27
-# Last Updated:     2021-12-14
+# Last Updated:     2021-12-15
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
@@ -45,27 +45,30 @@ class BioticsSQLError(Exception):
 # Define class called Tool
 class Tool:
     """Select all points, lines and polygons for a specific species."""
+
     # Instantiate the class
     def __init__(self):
         pass
 
     """These functions are called from within the run_tool function. The first parameter should be self, 
     but I don't understand how to get this to work properly."""
+
     # Define a function to create the group layer for a selected record (Function = reusable piece of code)
     def create_group_lyr(m, grp_lyr, sp_com_name, sp_sci_name):
         arcpy.AddMessage("Run create_group_lyr function.")
 
         # Naming convention for output group layer: Common Name (Scientific Name)
-        group_lyr_name = "{} ({})".format(sp_com_name, sp_sci_name)
-        arcpy.AddMessage("Processing {} ...".format(group_lyr_name))
+        grp_lyr_name = "{} ({})".format(sp_com_name, sp_sci_name)
+        arcpy.AddMessage("Processing {} ...".format(grp_lyr_name))
+        arcpy.AddMessage(grp_lyr.filePath)
 
         # Add a copy of the SpeciesData group layer to the TOC (by referencing the .lyrx file written to scratch)
         m.addLayer(grp_lyr, "TOP")
 
         # Rename the newly added group layer, because layer was added at top index reference = [0]
         group_lyr = m.listLayers("SpeciesData")[0]
-        group_lyr.name = group_lyr_name  # rename the group layer in TOC
-        group_lyr = m.listLayers(group_lyr_name)[0]
+        group_lyr.name = grp_lyr_name  # rename the group layer in TOC
+        group_lyr = m.listLayers(grp_lyr_name)[0]
         group_lyr.isVisible = False  # turn off the visibility for the group layer
 
         return group_lyr
@@ -147,7 +150,10 @@ class Tool:
                           "element_code",
                           "ca_nname_level",
                           "national_scientific_name",
-                          "national_engl_name"]  # new list of fields
+                          "national_engl_name"]
+
+        # List of InputDataset fields that you want to use in the search cursor
+        inputdataset_fields = ["inputdatasetid", "datasetsourceid"]
 
         try:
             # Current ArcPro Project
@@ -204,10 +210,10 @@ class Tool:
             # Error handling to check for existence of the "SpeciesData" group lyr
             if len(m.listLayers("SpeciesData")) > 0:
                 # Get the existing SpeciesDate group layer as a layer object
-                group_lyr = m.listLayers("SpeciesData")[0]
+                species_group_lyr = m.listLayers("SpeciesData")[0]
 
                 # Write a copy of the SpeciesData group layer to the user's scratch folder
-                arcpy.SaveToLayerFile_management(group_lyr, scratch + "\\species_group.lyrx")
+                arcpy.SaveToLayerFile_management(species_group_lyr, scratch + "\\species_group.lyrx")
 
                 # Create a layer file from the scratch workspace
                 new_group_lyr = arcpy.mp.LayerFile(scratch + "\\species_group.lyrx")
@@ -240,7 +246,6 @@ class Tool:
             # Get record details from Biotics table using a search cursor for the selected record
             with arcpy.da.SearchCursor(param_table, biotics_fields, param_sql) as biotics_cursor:
                 for row in biotics_cursor:
-
                     # Assign variables from the record based on the list order in biotics_fields variable
                     speciesid = row[0]
                     element_code = row[1]
@@ -264,15 +269,15 @@ class Tool:
             # Create the group layer by calling the create_group_lyr() function
             group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name)
 
-            # # USE THE SAME FUNCTION TO CREATE ALL POINTS/LINES/EOS
-            # Create the point layer by calling the create_lyr() function
-            Tool.create_lyr(m, group_lyr, speciesid, 'InputPoint')
-
-            # Create the line layer by calling the create_lyr() function
-            Tool.create_lyr(m, group_lyr, speciesid, 'InputLine')
-
-            # Create the eo layer by calling the create_lyr() function
-            Tool.create_lyr(m, group_lyr, speciesid, 'EO_Polygon')
+            # # # USE THE SAME FUNCTION TO CREATE ALL POINTS/LINES/EOS
+            # # Create the point layer by calling the create_lyr() function
+            # Tool.create_lyr(m, group_lyr, speciesid, 'InputPoint')
+            #
+            # # Create the line layer by calling the create_lyr() function
+            # Tool.create_lyr(m, group_lyr, speciesid, 'InputLine')
+            #
+            # # Create the eo layer by calling the create_lyr() function
+            # Tool.create_lyr(m, group_lyr, speciesid, 'EO_Polygon')
 
             # # Create the polygon layer by calling the create_lyr() function [OLD LOGIC]
             # Tool.create_lyr(m, group_lyr, speciesid, 'InputPolygon')
@@ -282,20 +287,47 @@ class Tool:
             # Tool.create_poly_lyr(m, group_lyr, speciesid)
 
             # Write the logic here that is needed to process polygons w/ & w/out range maps / critical habitat, then
-            # make a function out of it.
+            # make a function out of it.  IT IS PROBABLY GOING TO BE EASIER TO BUILD THE LOGIC FOR THE RANGE MAPS AND
+            # CRITICAL HABITAT SUB-DATASETS FIRST, THEN WRITE THE LOGIC FOR THE REMAINING INPUTPOLYGONS
 
-            # Naming convention for polygon layer = InputPolygon_SpeciesID
-            lyr_name = "InputPolygon_{}".format(speciesid)
+            # # CREATE ECCCRANGEMAP_SPECIESID LAYER .................................................................
+            # Empty list to hold InputDatasetID values for records that correspond to ECCC Range Maps
+            eccc_range_data_list = []
 
-            if len(m.listLayers("InputPolygon")) > 0:
+            # Search cursor to get the InputDatasetID values from InputDataset table
+            # for records that have DatasetSourceID = 994 (i.e., DatasetSourceName = ECCC Range Maps)
+            with arcpy.da.SearchCursor("InputDataset",
+                                       inputdataset_fields,
+                                       "datasetsourceid = 994") as inputdataset_cursor:
+
+                # Iterate through the ECCC Range Map records in the InputDataset table
+                for inputdataset_record in inputdataset_cursor:
+                    # arcpy.AddMessage("InputDatasetID {}, "
+                    #                  "DatasetSourceID {}".format(inputdataset_record[0], inputdataset_record[1]))
+
+                    # Append InputDatasetID values to the eccc_range_data_list
+                    eccc_range_data_list.append(inputdataset_record[0])
+
+            del inputdataset_record, inputdataset_cursor
+            # arcpy.AddMessage(eccc_range_data_list)  # prints [value]
+
+            # Naming convention for eccc range layer = ECCCRange_SpeciesID
+            lyr_name = "ECCCRangeMaps_{}".format(speciesid)
+
+            # Check that the InputPolygon layer is loaded and that there are records in the eccc_range_data_list
+            if len(m.listLayers("InputPolygon")) > 0 and len(eccc_range_data_list) > 0:
                 lyr = m.listLayers("InputPolygon")[0]
 
+                # Convert the list to a tuple (needed for the sql statement to run properly)
+                eccc_range_data_tuple = tuple(eccc_range_data_list)
+                # arcpy.AddMessage(eccc_range_data_tuple)
 
-                # Add logic to NOT select data from range maps & critical habitat
+                # SQL statement to select InputPolygons for the species and for ECCC Range Maps
+                eccc_range_sql = "speciesid = {} And inputdatasetid IN {}".format(speciesid, eccc_range_data_tuple)
+                # arcpy.AddMessage(eccc_range_sql)
 
-
-                # Make a new feature layer with sql query and added .getOutput(0) function [OLD LOGIC]
-                new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, "speciesid = {}".format(speciesid),
+                # Make a new feature layer with sql query and added .getOutput(0) function [FAILING HERE]
+                new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, eccc_range_sql,
                                                             None).getOutput(0)
 
                 # Get a count of the records in the new feature layer
@@ -311,7 +343,41 @@ class Tool:
 
             else:
                 raise SpeciesDataError
+            # # END CREATE ECCCRANGEMAP_SPECIESID LAYER ..............................................................
 
+            # # Naming convention for polygon layer = InputPolygon_SpeciesID
+            # lyr_name = "InputPolygon_{}".format(speciesid)
+            #
+            # if len(m.listLayers("InputPolygon")) > 0:
+            #     lyr = m.listLayers("InputPolygon")[0]
+            #
+            #     # Do a series of arcpy.management.SelectLayerByAttribute queries to get data for the speciesid, then
+            #     # remove records that are in the list of InputDatasetID values for Ranges / Critical Habitat
+            #     arcpy.SelectLayerByAttribute_management(lyr, "NEW_SELECTION", "speciesid = {}".format(speciesid))
+            #
+            #     # # Add logic to remove records from the above selection based on InputDatasetID values [WORKING HERE]
+            #     # arcpy.SelectLayerByAttribute_management(lyr, "REMOVE_FROM_SELECTION", CLAUSE)
+            #
+            #     # # Make a new feature layer for the species with no range or critical habitat datasets in it
+            #     # new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name).getOutput(0)
+            #
+            #     # Make a new feature layer with sql query and added .getOutput(0) function [OLD LOGIC]
+            #     new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, "speciesid = {}".format(speciesid),
+            #                                                 None).getOutput(0)
+            #
+            #     # Get a count of the records in the new feature layer
+            #     row_count = int(arcpy.GetCount_management(new_lyr).getOutput(0))
+            #
+            #     # Check to see if there are any records for the species
+            #     if row_count != 0:
+            #         m.addLayerToGroup(group_lyr, new_lyr, "TOP")  # Add the new poly layer
+            #     else:
+            #         pass  # Do nothing
+            #
+            #     m.removeLayer(lyr)  # remove old poly layer
+            #
+            # else:
+            #     raise SpeciesDataError
 
             # # FIND ALL RELATED RECORDS THAT NEED TO BE PROCESSED .....................................................
             # Assign sql query variable related to the species id
@@ -420,7 +486,6 @@ class Tool:
                     # Query the record in Biotics to get species information using a search cursor
                     with arcpy.da.SearchCursor(param_table, biotics_fields) as new_biotics_cursor:
                         for row in new_biotics_cursor:
-
                             # Assign relevant variables from the biotics record
                             speciesid = row[0]
                             s_level = row[2]
@@ -452,8 +517,6 @@ class Tool:
                             # # Create the polygon layer by calling the create_poly_lyr() function [UPDATE!!!]
                             # Tool.create_poly_lyr(m, group_lyr, speciesid)
 
-
-
             m.clearSelection()  # clear all selections
             arcpy.AddMessage("End of script.")
 
@@ -482,8 +545,8 @@ class Tool:
 
         # Error handling if an error occurs while using a Geoprocessing Tool in the script
         except arcpy.ExecuteError:
-            # If the script crashes, remove the group layer
-            m.removeLayer(group_lyr)
+            # # If the script crashes, remove the group layer
+            # m.removeLayer(group_lyr)
 
             # Get the tool error messages
             msgs = arcpy.GetMessages(2)
@@ -496,8 +559,8 @@ class Tool:
 
         # Error handling if the script fails for other unexplained reasons
         except:
-            # If the script crashes, remove the group layer
-            m.removeLayer(group_lyr)
+            # # If the script crashes, remove the group layer
+            # m.removeLayer(group_lyr)
 
             # Get the traceback object
             tb = sys.exc_info()[2]
