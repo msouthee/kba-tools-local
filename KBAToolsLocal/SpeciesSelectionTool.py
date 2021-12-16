@@ -61,8 +61,9 @@ class Tool:
 
         # Naming convention for output group layer: Common Name (Scientific Name)
         grp_lyr_name = "{} ({})".format(sp_com_name, sp_sci_name)
-        arcpy.AddMessage("Processing {} ...".format(grp_lyr_name))
-        arcpy.AddMessage(grp_lyr.filePath)
+
+        # arcpy.AddMessage("Processing {}.".format(grp_lyr_name))
+        # arcpy.AddMessage(grp_lyr.filePath)
 
         # Add a copy of the SpeciesData group layer to the TOC (by referencing the .lyrx file written to scratch)
         m.addLayer(grp_lyr, "TOP")
@@ -98,6 +99,7 @@ class Tool:
                 new_lyr = m.listLayers(lyr_name)[0]
                 new_lyr.visible = False  # Turn off the visibility for the new layer
             else:
+                # arcpy.AddMessage("No {}s for this species.".format(ft_type))
                 pass  # Do nothing
 
             m.removeLayer(lyr)  # remove old layer
@@ -107,7 +109,7 @@ class Tool:
 
     # Define a function to create the InputPolygon layers for the species (w/out range & critical habitat data)
     def create_poly_lyr(m, grp_lyr, speciesid, range_data_list):
-        arcpy.AddMessage("Run create_poly_lyr function.")
+        arcpy.AddMessage("Run create_poly_lyr function for InputPolygon.")
 
         # Naming convention for polygon layer = InputPolygon_SpeciesID
         lyr_name = "InputPolygon_{}".format(speciesid)
@@ -134,6 +136,7 @@ class Tool:
                 new_lyr = m.listLayers(lyr_name)[0]
                 new_lyr.visible = False  # Turn off the visibility for the new layer
             else:
+                # arcpy.AddMessage("No InputPolygons for this species.")
                 pass  # Do nothing
 
             m.removeLayer(lyr)  # remove old poly layer
@@ -171,6 +174,7 @@ class Tool:
                 new_lyr = m.listLayers(lyr_name)[0]
                 new_lyr.visible = False  # Turn off the visibility for the new layer
             else:
+                # arcpy.AddMessage("No {} for this species.".format(range_type))
                 pass  # Do nothing
 
         else:
@@ -218,22 +222,24 @@ class Tool:
 
             # # START ERROR HANDLING TO CHECK THAT THE MAP CONTAINS THE NECESSARY TABLES AND DATA LAYERS ...............
             """Error handling to check for existence of required data layers in the current map."""
+            arcpy.AddMessage(u"\u200B")  # Unicode literate to create new line
+            arcpy.AddMessage("Start Error Handling Processes...")
 
             # Create a list of the datasets to check that they exist and don't have active definition query
             dataset_list = ["InputPoint", "InputLine", "InputPolygon", "EO_Polygon"]
 
-            # Iterate through the list of dataset names
+            # Iterate through the list of dataset names (layers)
             for dataset in dataset_list:
                 # Check to see if a dataset layer with that name exists in the map
-                if len(m.listLayers(dataset)) > 0:
-                    arcpy.AddMessage("{} dataset exists.".format(dataset))
+                if arcpy.Exists("SpeciesData\\{}".format(dataset)):
+                    arcpy.AddMessage("{} data layer exists.".format(dataset))
 
                     # Create a layer variable out of the current dataset
                     lyr = m.listLayers(dataset)[0]
 
                     # Check if the layer supports a definition query
                     if lyr.supports("DEFINITIONQUERY"):
-                        arcpy.AddMessage("{} support def query.".format(dataset))
+                        # arcpy.AddMessage("{} supports def query.".format(dataset))
 
                         # Check if there is an active definition query on any of the layer
                         if lyr.definitionQuery != '':
@@ -242,6 +248,7 @@ class Tool:
                             raise DefQueryError
 
                         else:
+                            # arcpy.AddMessage("No def query on {}.".format(dataset))
                             pass
                     else:
                         pass
@@ -254,7 +261,7 @@ class Tool:
             # Create a list of the tables to check that they exist and don't have active definition query
             table_list = ["BIOTICS_ELEMENT_NATIONAL", "Species (view only)", "InputDataset"]
 
-            # Iterate through the list of table names
+            # Iterate through the list of table names (tables)
             for table in table_list:
                 # Error handling to ensure that the required tables exists in the map
                 if arcpy.Exists(table):
@@ -263,10 +270,6 @@ class Tool:
                     # Create a layer variable out of the current table
                     lyr = m.listTables(table)[0]
 
-                    # # Check if the layer supports a definition query
-                    # if lyr.supports("DEFINITIONQUERY"):
-                    #     arcpy.AddMessage("{} support def query.".format(table))
-
                     # Check if there is an active definition query on any of the layer
                     if lyr.definitionQuery != '':
 
@@ -274,6 +277,7 @@ class Tool:
                         raise DefQueryError
 
                     else:
+                        # arcpy.AddMessage("No def query on {}.".format(table))
                         pass
 
                 else:
@@ -282,7 +286,8 @@ class Tool:
             """Error handling to check for existence of the "SpeciesData" group layer."""
 
             # Check that the SpeciesData Group Layer exists in the map
-            if len(m.listLayers("SpeciesData")) > 0:
+            if arcpy.Exists("SpeciesData"):
+                arcpy.AddMessage("SpeciesData group layer exists.")
 
                 # Get the existing SpeciesDate group layer as a layer object
                 species_group_lyr = m.listLayers("SpeciesData")[0]
@@ -298,6 +303,9 @@ class Tool:
             # # END ERROR HANDLING .....................................................................................
 
             # # START DATA PROCESSING ..................................................................................
+            arcpy.AddMessage(u"\u200B")  # Unicode literate to create new line
+            arcpy.AddMessage("Start Processing Records...")
+
             # Select the record in BIOTICS table based on the user-specified sql expression
             biotics_record = arcpy.management.SelectLayerByAttribute(param_table, "NEW_SELECTION", param_sql)
 
@@ -306,7 +314,7 @@ class Tool:
 
             # if count = 0, throw error using custom exception
             if biotics_count == 0:
-                arcpy.AddMessage("No records selected.")
+                arcpy.AddMessage("No record selected.")
                 raise BioticsSQLError
 
             # if count > 1, throw error using custom exception
@@ -425,7 +433,8 @@ class Tool:
             # Check to see if the initial selected record is a full species or an infraspecies
             # If the user selects a full species, process all sub/infraspecies for this species [INDIVIDUALLY]
             if s_level.lower() == "species":
-                arcpy.AddMessage("Full species selected. Process all infraspecies (if they exist).")
+                arcpy.AddMessage(u"\u200B")  # Unicode literate to create new line
+                arcpy.AddMessage("A full species was selected. Process all infraspecies (if they exist).")
 
                 # Select matching record from Species table for the initial full species record in Biotics
                 species_records = arcpy.management.SelectLayerByAttribute(species_table,
@@ -459,6 +468,8 @@ class Tool:
                 # Check if user wants to select the infraspecies & full species [based on param_infraspecies]
                 # Logic to select full species based on element_code variables
                 if param_infraspecies == "Yes":
+                    arcpy.AddMessage(u"\u200B")  # Unicode literate to create new line
+                    arcpy.AddMessage("An infraspecies was selected and the user wants to process the full species.")
 
                     # Select initial record from Species table based on the speciesid
                     species_records = arcpy.management.SelectLayerByAttribute(species_table,
@@ -511,13 +522,15 @@ class Tool:
                 pass  # Do nothing and go to end of script
 
             else:
-                # Iterate through the other species records [ONLY IF THE LIST IS MORE THAN ONE RECORD LONG]
+                arcpy.AddMessage("Processing additional records.")
+
+                # Iterate through the other species records [ONLY IF THE SPECIES LIST IS MORE THAN ONE RECORD LONG]
                 for s_id in speciesid_list:
                     # arcpy.AddMessage("Processing id {} now ...".format(s_id))
 
                     # Assign sql query variable related to the current species id in the list
                     biotics_sql = "speciesid = {}".format(s_id)
-                    arcpy.AddMessage(biotics_sql)
+                    # arcpy.AddMessage(biotics_sql)
 
                     # Select the record in Biotics that you want to process
                     arcpy.SelectLayerByAttribute_management(param_table, "NEW_SELECTION", biotics_sql)
@@ -531,7 +544,7 @@ class Tool:
                             sci_name = row[3]
                             common_name = row[4]
 
-                            arcpy.AddMessage("Processing species id: {}.".format(speciesid))
+                            arcpy.AddMessage("Species ID: {}.".format(speciesid))
                             arcpy.AddMessage("Scientific Name: {}".format(sci_name))
                             arcpy.AddMessage("Common Name: {}".format(common_name))
                             arcpy.AddMessage("Species Level: {}".format(s_level))
