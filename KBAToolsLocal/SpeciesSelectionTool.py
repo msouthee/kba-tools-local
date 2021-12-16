@@ -100,12 +100,21 @@ class Tool:
                 new_lyr = m.listLayers(lyr_name)[0]
                 new_lyr.visible = False  # Turn off the visibility for the new layer
 
-                # # Testing to get symbology from existing layer in the SpeciesData group
+                # # Testing to get symbology from existing layer in the SpeciesData group [DOESN'T WORK]
                 # old_lyr = m.listLayers(ft_type)[1]  # index value of 1 to get the layer from the SpeciesData group
                 # # This is never going to work because of requirement for a derived output layer from script tool
                 # arcpy.management.ApplySymbologyFromLayer(new_lyr, old_lyr)  # Apply existing symbology to new layer
 
-                # new_lyr.transparency = 30  # Apply 30% transparency
+                # Check if the current layer is the EO_Polygon layer
+                if ft_type == "EO_Polygon":
+
+                    # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
+                    sym = new_lyr.symbology
+                    sym.renderer.symbol.applySymbolFromGallery("EO Polygon")
+                    new_lyr.symbology = sym
+
+                else:
+                    pass
 
             else:
                 pass  # Do nothing
@@ -143,6 +152,12 @@ class Tool:
                 m.addLayerToGroup(grp_lyr, new_lyr, "BOTTOM")  # Add the new poly layer
                 new_lyr = m.listLayers(lyr_name)[0]
                 new_lyr.visible = False  # Turn off the visibility for the new layer
+
+                # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
+                sym = new_lyr.symbology
+                sym.renderer.symbol.applySymbolFromGallery("Input Polygon")
+                new_lyr.symbology = sym
+
             else:
                 pass  # Do nothing
 
@@ -180,6 +195,25 @@ class Tool:
                 m.addLayerToGroup(grp_lyr, new_lyr, "BOTTOM")  # Add the new range / critical habitat layer
                 new_lyr = m.listLayers(lyr_name)[0]
                 new_lyr.visible = False  # Turn off the visibility for the new layer
+
+                if range_type == "ECCCRangeMaps":
+                    # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
+                    sym = new_lyr.symbology
+                    sym.renderer.symbol.applySymbolFromGallery("ECCC Range Map")
+                    new_lyr.symbology = sym
+
+                elif range_type == "IUCNRangeMaps":
+                    # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
+                    sym = new_lyr.symbology
+                    sym.renderer.symbol.applySymbolFromGallery("IUCN Range Map")
+                    new_lyr.symbology = sym
+
+                else:
+                    # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
+                    sym = new_lyr.symbology
+                    sym.renderer.symbol.applySymbolFromGallery("ECCC Critical Habitat")
+                    new_lyr.symbology = sym
+
             else:
                 pass  # Do nothing
 
@@ -304,6 +338,20 @@ class Tool:
 
                 else:
                     raise NoTableError
+
+            """Error handling to check for existence of required symbology for new data layers."""
+
+            # Check if you can find one of the custom symbols to check if the WEB STYLE is loaded
+            lyr = m.listLayers("InputPolygon")[0]
+            sym = lyr.symbology
+
+            if sym.renderer.symbol.listSymbolsFromGallery("Input Polygon") != '':
+                sym.renderer.symbol.applySymbolFromGallery("Input Polygon")
+                lyr.symbology = sym
+
+            else:
+                arcpy.AddError("No symbology.")
+
             # # END ERROR HANDLING .....................................................................................
 
             # # START DATA PROCESSING ..................................................................................
@@ -621,6 +669,10 @@ class Tool:
 
             # Print tool error messages for use in Python
             print(msgs)
+
+        # BROAD EXCEPTION Error handling if the custom WCSC_KBA_Symbology isn't added to the project
+        except TypeError:
+            arcpy.AddError("You need to add the WCSC_KBA_Symbology from Portal to the current Project.")
 
         # Error handling if the script fails for other unexplained reasons
         except:
