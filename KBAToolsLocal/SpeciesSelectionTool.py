@@ -100,11 +100,6 @@ class Tool:
                 new_lyr = m.listLayers(lyr_name)[0]
                 new_lyr.visible = False  # Turn off the visibility for the new layer
 
-                # # Testing to get symbology from existing layer in the SpeciesData group [DOESN'T WORK]
-                # old_lyr = m.listLayers(ft_type)[1]  # index value of 1 to get the layer from the SpeciesData group
-                # # This is never going to work because of requirement for a derived output layer from script tool
-                # arcpy.management.ApplySymbologyFromLayer(new_lyr, old_lyr)  # Apply existing symbology to new layer
-
                 # Check if the current layer is the EO_Polygon layer
                 if ft_type == "EO_Polygon":
 
@@ -114,10 +109,10 @@ class Tool:
                     new_lyr.symbology = sym
 
                 else:
-                    pass
+                    pass  # Do nothing for the points and the lines
 
             else:
-                pass  # Do nothing
+                pass
 
             m.removeLayer(lyr)  # remove old layer
 
@@ -159,9 +154,9 @@ class Tool:
                 new_lyr.symbology = sym
 
             else:
-                pass  # Do nothing
+                pass
 
-            m.removeLayer(lyr)  # remove old poly layer
+            m.removeLayer(lyr)  # remove poly layer from the new species group
 
         else:
             raise SpeciesDataError
@@ -339,19 +334,15 @@ class Tool:
                 else:
                     raise NoTableError
 
-            """Error handling to check for existence of required symbology for new data layers."""
-
-            # Check if you can find one of the custom symbols to check if the WEB STYLE is loaded
+            """Error handling to check for existence of required symbology for new data layers.  This is not well
+            handled, but I couldn't figure out a more elegant solution within the arcpy world of commands."""
             lyr = m.listLayers("InputPolygon")[0]
             sym = lyr.symbology
 
-            if sym.renderer.symbol.listSymbolsFromGallery("Input Polygon") != '':
-                sym.renderer.symbol.applySymbolFromGallery("Input Polygon")
-                lyr.symbology = sym
-
-            else:
-                arcpy.AddError("No symbology.")
-
+            # Try to update symbology for the InputPolygon layer in the SpeciesData group layer
+            # This operation throws a TypeError that is caught with a custom error message if it fails
+            sym.renderer.symbol.applySymbolFromGallery("Input Polygon")
+            lyr.symbology = sym
             # # END ERROR HANDLING .....................................................................................
 
             # # START DATA PROCESSING ..................................................................................
@@ -462,10 +453,6 @@ class Tool:
 
             del inputdataset_record, inputdataset_cursor
 
-            # arcpy.AddMessage(eccc_range_data_list)
-            # arcpy.AddMessage(iucn_range_data_list)
-            # arcpy.AddMessage(crit_habitat_data_list)
-
             # Create a list of all the datasets that are Range or Critical Habitat datasets
             range_and_crit_habitat_list = eccc_range_data_list + iucn_range_data_list + crit_habitat_data_list
 
@@ -477,15 +464,6 @@ class Tool:
             Tool.create_range_lyr(m, group_lyr, speciesid, "ECCCRangeMaps", eccc_range_data_list)
             Tool.create_range_lyr(m, group_lyr, speciesid, "IUCNRangeMaps", iucn_range_data_list)
             Tool.create_range_lyr(m, group_lyr, speciesid, "ECCCCriticalHabitat", crit_habitat_data_list)
-
-
-            # # DO ADDITIONAL SYMBOLOGY PROCESSING .....................................................................
-            # # You have to save the ArcGIS Pro session to have the symbology persist [NO you need derived output layer]
-            # aprx.save()
-
-            # I'm going to have to use the CIM model to apply custom symbology and transparencies if I need them
-
-
 
             # # FIND ALL RELATED RECORDS THAT NEED TO BE PROCESSED .....................................................
             # Assign variables related to the species table and the species id sql statement
@@ -670,7 +648,7 @@ class Tool:
             # Print tool error messages for use in Python
             print(msgs)
 
-        # BROAD EXCEPTION Error handling if the custom WCSC_KBA_Symbology isn't added to the project
+        # Error handling if custom WCSC_KBA_Symbology isn't in the project [BROAD EXCEPTION FOR BUILT-IN PYTHON CLASS]
         except TypeError:
             arcpy.AddError("You need to add the WCSC_KBA_Symbology from Portal to the current Project.")
 
