@@ -84,6 +84,7 @@ class Tool:
         lyr_name = "{}_{}".format(ft_type, speciesid)
 
         if len(m.listLayers(ft_type)) > 0:
+            # Create a variable from the old/existing layer
             lyr = m.listLayers(ft_type)[0]
 
             # Make a new feature layer with sql query and added .getOutput(0) function
@@ -98,8 +99,15 @@ class Tool:
                 m.addLayerToGroup(grp_lyr, new_lyr, "BOTTOM")  # Add the new layer
                 new_lyr = m.listLayers(lyr_name)[0]
                 new_lyr.visible = False  # Turn off the visibility for the new layer
+
+                # # Testing to get symbology from existing layer in the SpeciesData group
+                # old_lyr = m.listLayers(ft_type)[1]  # index value of 1 to get the layer from the SpeciesData group
+                # # This is never going to work because of requirement for a derived output layer from script tool
+                # arcpy.management.ApplySymbologyFromLayer(new_lyr, old_lyr)  # Apply existing symbology to new layer
+
+                # new_lyr.transparency = 30  # Apply 30% transparency
+
             else:
-                # arcpy.AddMessage("No {}s for this species.".format(ft_type))
                 pass  # Do nothing
 
             m.removeLayer(lyr)  # remove old layer
@@ -136,7 +144,6 @@ class Tool:
                 new_lyr = m.listLayers(lyr_name)[0]
                 new_lyr.visible = False  # Turn off the visibility for the new layer
             else:
-                # arcpy.AddMessage("No InputPolygons for this species.")
                 pass  # Do nothing
 
             m.removeLayer(lyr)  # remove old poly layer
@@ -174,7 +181,6 @@ class Tool:
                 new_lyr = m.listLayers(lyr_name)[0]
                 new_lyr.visible = False  # Turn off the visibility for the new layer
             else:
-                # arcpy.AddMessage("No {} for this species.".format(range_type))
                 pass  # Do nothing
 
         else:
@@ -221,10 +227,27 @@ class Tool:
             arcpy.AddMessage("Scratch folder: {}".format(scratch))
 
             # # START ERROR HANDLING TO CHECK THAT THE MAP CONTAINS THE NECESSARY TABLES AND DATA LAYERS ...............
-            """Error handling to check for existence of required data layers in the current map."""
             arcpy.AddMessage(u"\u200B")  # Unicode literate to create new line
             arcpy.AddMessage("Start Error Handling Processes...")
 
+            """Error handling to check for existence of the "SpeciesData" group layer."""
+            # Check that the SpeciesData Group Layer exists in the map
+            if arcpy.Exists("SpeciesData"):
+                arcpy.AddMessage("SpeciesData group layer exists.")
+
+                # Get the existing SpeciesDate group layer as a layer object
+                species_group_lyr = m.listLayers("SpeciesData")[0]
+
+                # Write a copy of the SpeciesData group layer to the user's scratch folder
+                arcpy.SaveToLayerFile_management(species_group_lyr, scratch + "\\species_group.lyrx")
+
+                # Create a layer file from the scratch workspace
+                new_group_lyr = arcpy.mp.LayerFile(scratch + "\\species_group.lyrx")
+
+            else:
+                raise SpeciesDataError
+
+            """Error handling to check for existence of required data layers in the current map."""
             # Create a list of the datasets to check that they exist and don't have active definition query
             dataset_list = ["InputPoint", "InputLine", "InputPolygon", "EO_Polygon"]
 
@@ -257,7 +280,6 @@ class Tool:
                     raise NoDataError
 
             """ Error handling to check for existence of required data tables in the current map."""
-
             # Create a list of the tables to check that they exist and don't have active definition query
             table_list = ["BIOTICS_ELEMENT_NATIONAL", "Species (view only)", "InputDataset"]
 
@@ -282,24 +304,6 @@ class Tool:
 
                 else:
                     raise NoTableError
-
-            """Error handling to check for existence of the "SpeciesData" group layer."""
-
-            # Check that the SpeciesData Group Layer exists in the map
-            if arcpy.Exists("SpeciesData"):
-                arcpy.AddMessage("SpeciesData group layer exists.")
-
-                # Get the existing SpeciesDate group layer as a layer object
-                species_group_lyr = m.listLayers("SpeciesData")[0]
-
-                # Write a copy of the SpeciesData group layer to the user's scratch folder
-                arcpy.SaveToLayerFile_management(species_group_lyr, scratch + "\\species_group.lyrx")
-
-                # Create a layer file from the scratch workspace
-                new_group_lyr = arcpy.mp.LayerFile(scratch + "\\species_group.lyrx")
-
-            else:
-                raise SpeciesDataError
             # # END ERROR HANDLING .....................................................................................
 
             # # START DATA PROCESSING ..................................................................................
@@ -314,11 +318,12 @@ class Tool:
 
             # if count = 0, throw error using custom exception
             if biotics_count == 0:
-                arcpy.AddMessage("No record selected.")
+                arcpy.AddWarning("No record selected. Please select a record using the SQL clause.")
                 raise BioticsSQLError
 
             # if count > 1, throw error using custom exception
             elif biotics_count > 1:
+                arcpy.AddWarning("More than one record selected. Please select only one record.")
                 raise BioticsSQLError
 
             else:
@@ -424,6 +429,15 @@ class Tool:
             Tool.create_range_lyr(m, group_lyr, speciesid, "ECCCRangeMaps", eccc_range_data_list)
             Tool.create_range_lyr(m, group_lyr, speciesid, "IUCNRangeMaps", iucn_range_data_list)
             Tool.create_range_lyr(m, group_lyr, speciesid, "ECCCCriticalHabitat", crit_habitat_data_list)
+
+
+            # # DO ADDITIONAL SYMBOLOGY PROCESSING .....................................................................
+            # # You have to save the ArcGIS Pro session to have the symbology persist [NO you need derived output layer]
+            # aprx.save()
+
+            # I'm going to have to use the CIM model to apply custom symbology and transparencies if I need them
+
+
 
             # # FIND ALL RELATED RECORDS THAT NEED TO BE PROCESSED .....................................................
             # Assign variables related to the species table and the species id sql statement
@@ -592,7 +606,7 @@ class Tool:
 
         # Error handling for custom input error related to the biotics SQL statement
         except BioticsSQLError:
-            arcpy.AddError("Incorrect sql statement. See Messages for more details.")
+            arcpy.AddError("Incorrect SQL statement. See Messages tab for more details.")
 
         # Error handling if an error occurs while using a Geoprocessing Tool in the script
         except arcpy.ExecuteError:
