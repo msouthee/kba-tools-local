@@ -44,6 +44,11 @@ class BioticsSQLError(Exception):
     pass
 
 
+class SymbologyError(Exception):
+    """Exception raised for SymbologyError in the tool."""
+    pass
+
+
 # Define class called Tool
 class Tool:
     """Select all points, lines and polygons for a specific species."""
@@ -334,15 +339,31 @@ class Tool:
                 else:
                     raise NoTableError
 
-            """Error handling to check for existence of required symbology for new data layers.  This is not well
-            handled, but I couldn't figure out a more elegant solution within the arcpy world of commands."""
+            """Error handling to check for existence of required symbology for new data layers.."""
             lyr = m.listLayers("InputPolygon")[0]
-            sym = lyr.symbology
+            sym = lyr.symbology  # Access symbol parameters in arcpy
 
-            # Try to update symbology for the InputPolygon layer in the SpeciesData group layer
-            # This operation throws a TypeError that is caught with a custom error message if it fails
-            sym.renderer.symbol.applySymbolFromGallery("Input Polygon")
-            lyr.symbology = sym
+            counter = 0
+            condition = False
+            sym_list = sym.renderer.symbol.listSymbolsFromGallery("")  # List of all symbols in the project gallery
+
+            # While statement to run through the entire sym_list and try to find the custom Input Polygon symbol
+            while not condition:
+                current_name = sym_list[counter].name  # Get the name of the current symbol
+                if current_name == "Input Polygon":
+                    condition = True  # exit the while loop after processing the statements in this clause
+                    arcpy.AddMessage("Custom WCSC-KBA-Symbology found.")
+
+                    # Update symbology for the InputPolygon layer in the SpeciesData group layer
+                    sym.renderer.symbol.applySymbolFromGallery("Input Polygon")
+                    lyr.symbology = sym
+
+                else:
+                    counter += 1  # increase the counter to move to the next item in the list
+                    if counter == len(sym_list):  # you have reached the end of the list and not found the desired sym
+                        condition = True
+                        raise SymbologyError
+
             # # END ERROR HANDLING .....................................................................................
 
             # # START DATA PROCESSING ..................................................................................
@@ -634,6 +655,10 @@ class Tool:
         except BioticsSQLError:
             arcpy.AddError("Incorrect SQL statement. See Messages tab for more details.")
 
+        # Error handling if custom WCSC_KBA_Symbology isn't in the project
+        except SymbologyError:
+            arcpy.AddError("You need to add the WCSC_KBA_Symbology from Portal to the current Project.")
+
         # Error handling if an error occurs while using a Geoprocessing Tool in the script
         except arcpy.ExecuteError:
             # If the script crashes, remove the group layer
@@ -648,9 +673,9 @@ class Tool:
             # Print tool error messages for use in Python
             print(msgs)
 
-        # Error handling if custom WCSC_KBA_Symbology isn't in the project [BROAD EXCEPTION FOR BUILT-IN PYTHON CLASS]
-        except TypeError:
-            arcpy.AddError("You need to add the WCSC_KBA_Symbology from Portal to the current Project.")
+        # # Error handling if custom WCSC_KBA_Symbology isn't in the project [BROAD EXCEPTION FOR BUILT-IN PYTHON CLASS]
+        # except TypeError:
+        #     arcpy.AddError("You need to add the WCSC_KBA_Symbology from Portal to the current Project.")
 
         # Error handling if the script fails for other unexplained reasons
         except:
