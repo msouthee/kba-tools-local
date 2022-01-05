@@ -446,7 +446,7 @@ class Tool:
                                                                       "NEW_SELECTION",
                                                                       speciesid_sql)
 
-            """Use logic to select all sub/infraspecies records for this full species by comparing and matching the 
+            """Use logic to select all sub/infraspecies records for the full species by comparing and matching the 
             element_code for the full species from Biotics to the fullspecies_elementcode for the infraspecies
             records in Species table."""
 
@@ -471,7 +471,8 @@ class Tool:
             speciesid_tuple = tuple(speciesid_list)
             arcpy.AddMessage(speciesid_tuple)
 
-            """ This is where the bulk of the processing is going to to happen on the group of species ID values."""
+            """ This is where the bulk of the processing happens to create the grouped output for the species ID values
+            related to the full species."""
 
             # # USE FUNCTIONS TO CREATE GROUP LAYER AND POINTS/LINES/EOS LAYERS ......................................
             # Create the group layer by calling the create_group_lyr() function
@@ -595,10 +596,6 @@ class Tool:
 
             # Print tool error messages for use in Python
             print(msgs)
-
-        # # Error handling if custom WCSC_KBA_Symbology isn't in the project [BROAD EXCEPTION FOR BUILT-IN PYTHON CLASS]
-        # except TypeError:
-        #     arcpy.AddError("You need to add the WCSC_KBA_Symbology from Portal to the current Project.")
 
         # Error handling if the script fails for other unexplained reasons
         except:

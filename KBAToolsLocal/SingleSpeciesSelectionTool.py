@@ -69,9 +69,6 @@ class Tool:
         # Naming convention for output group layer: Common Name (Scientific Name)
         grp_lyr_name = "{} ({})".format(sp_com_name, sp_sci_name)
 
-        # arcpy.AddMessage("Processing {}.".format(grp_lyr_name))
-        # arcpy.AddMessage(grp_lyr.filePath)
-
         # Add a copy of the SpeciesData group layer to the TOC (by referencing the .lyrx file written to scratch)
         m.addLayer(grp_lyr, "TOP")
 
