@@ -12,11 +12,11 @@
 
 # Import libraries and modules
 import arcpy
-import SpeciesSelectionTool
+import SingleSpeciesSelectionTool
 
 # Reload your module in the Python toolbox
 import importlib
-importlib.reload(SpeciesSelectionTool)
+importlib.reload(SingleSpeciesSelectionTool)
 
 
 # Define Toolbox
@@ -27,11 +27,11 @@ class Toolbox(object):
         self.alias = "KBAToolsLocal"
 
         # List of tool classes associated with this toolbox
-        self.tools = [ToolSpeciesSelection]
+        self.tools = [ToolSingleSpeciesSelection]
 
 
 # Define Species Selection Tool
-class ToolSpeciesSelection(object):
+class ToolSingleSpeciesSelection(object):
     def __init__(self):
         """Define the Species Selection Tool."""
         self.label = "Species Selection Tool"
@@ -102,7 +102,7 @@ class ToolSpeciesSelection(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        sst = SpeciesSelectionTool.Tool()
+        sst = SingleSpeciesSelectionTool.Tool()
         sst.run_tool(parameters, messages)
         return
 

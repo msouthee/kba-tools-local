@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------------------------------------------------
-# Script Name:      SpeciesSelectionTool.py
+# Script Name:      SingleSpeciesSelectionTool.py
 #
 # Script Created:   2021-10-27
 # Last Updated:     2021-12-15
@@ -8,7 +8,8 @@
 #
 # Purpose:          Create definition queries and add the output data layers (with valid data) under a species heading
 #                   into the TOC in the active map.  Process data for unique species records individually using an
-#                   EQUALS statement.  Contains logic to process full species and/or infraspecies differently and
+#                   EQUALS statement. Creates output data in individual & separate groups for each species ID value.
+#                   Contains logic to process full species and/or infraspecies differently and
 #                   contains logic to handle ECCC Range Maps, ECCC Critical Habitat & IUCN Range Maps separately from
 #                   other InputPolygon records.
 # ----------------------------------------------------------------------------------------------------------------------
