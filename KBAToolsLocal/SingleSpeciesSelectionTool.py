@@ -2,15 +2,16 @@
 # Script Name:      SingleSpeciesSelectionTool.py
 #
 # Script Created:   2021-10-27
-# Last Updated:     2021-12-15
+# Last Updated:     2022-01-05
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
 # Purpose:          Create definition queries and add the output data layers (with valid data) under a species heading
-#                   into the TOC in the active map.  Process data for unique species records individually using an
-#                   EQUALS statement. Creates output data in individual & separate groups for each species ID value.
-#                   Contains logic to process full species and/or infraspecies differently and
-#                   contains logic to handle ECCC Range Maps, ECCC Critical Habitat & IUCN Range Maps separately from
+#                   into the TOC in the active map.
+#                   Process data for unique species records individually using an EQUALS statement.
+#                   Creates output data in individual & separate groups for each species ID value.
+#                   Contains logic to process full species and/or infraspecies differently.
+#                   Contains logic to handle ECCC Range Maps, ECCC Critical Habitat & IUCN Range Maps separately from
 #                   other InputPolygon records.
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -412,9 +413,6 @@ class Tool:
             # Exit the search cursor, but keep the variables from inside the search cursor
             del row, biotics_cursor
 
-            """This section is going to change in the 2nd tool, so that logic can be implemented to group all records
-            for a full species & its infraspecies into one output group in the TOC."""
-
             # # USE FUNCTIONS TO CREATE GROUP LAYER AND POINTS/LINES/EOS LAYERS ........................................
             # Create the group layer by calling the create_group_lyr() function
             group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name)
@@ -673,10 +671,6 @@ class Tool:
 
             # Print tool error messages for use in Python
             print(msgs)
-
-        # # Error handling if custom WCSC_KBA_Symbology isn't in the project [BROAD EXCEPTION FOR BUILT-IN PYTHON CLASS]
-        # except TypeError:
-        #     arcpy.AddError("You need to add the WCSC_KBA_Symbology from Portal to the current Project.")
 
         # Error handling if the script fails for other unexplained reasons
         except:

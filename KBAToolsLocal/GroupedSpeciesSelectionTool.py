@@ -7,10 +7,11 @@
 # Credits:          © WCS Canada / Meg Southee 2021
 #
 # Purpose:          Create definition queries and add the output data layers (with valid data) under a species heading
-#                   into the TOC in the active map.  Process data for species records using a LIKE statement.
+#                   into the TOC in the active map.
+#                   Process data for species records using a LIKE statement.
 #                   Creates output data that is grouped for multiple species ID values.
-#                   Contains logic to process full species and/or infraspecies differently and
-#                   contains logic to handle ECCC Range Maps, ECCC Critical Habitat & IUCN Range Maps separately from
+#                   Contains logic to process full species and their subspecies.
+#                   Contains logic to handle ECCC Range Maps, ECCC Critical Habitat & IUCN Range Maps separately from
 #                   other InputPolygon records.
 # ----------------------------------------------------------------------------------------------------------------------
 
