@@ -13,6 +13,7 @@
 # Import libraries and modules
 import arcpy
 import SingleSpeciesSelectionTool
+import GroupedSpeciesSelectionTool
 
 # Reload your module in the Python toolbox
 import importlib
@@ -143,25 +144,9 @@ class ToolGroupedSpeciesSelection(object):
         param_sql.parameterDependencies = [param_table.name]
 
         # Default sql query
-        param_sql.value = "national_scientific_name = 'Abronia latifolia'"
+        param_sql.value = "national_scientific_name = 'Acaulon muticum'"
 
-        # Yes/No parameter
-        param_infraspecies = arcpy.Parameter(
-            displayName='If you selected an infraspecies, do you want to process the full species as well?'
-                        '\nNote: If you selected a full species, all infraspecies will be included and '
-                        'this dropdown menu will be ignored.',
-            name='infraspecies',
-            datatype='GPString',
-            parameterType='Required',
-            direction='Input')
-
-        # Filter list of available responses
-        param_infraspecies.filter.list = ["Yes", "No"]
-
-        # Default selection
-        param_infraspecies.value = "No"
-
-        params = [param_table, param_sql, param_infraspecies]
+        params = [param_table, param_sql]
         return params
 
     def isLicensed(self):
