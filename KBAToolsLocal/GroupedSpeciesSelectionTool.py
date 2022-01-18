@@ -425,11 +425,10 @@ class Tool:
             # Exit the search cursor, but keep the variables from inside the search cursor
             del row, biotics_cursor
 
-            # Check to see if the user selected a full species or a sub-species
+            # Check to see if input is full species (species) or infraspecies (i.e., subspecies, population or variety)
             if s_level.lower() != "species":
                 # Throw error if the user did not select a full species
                 raise InfraspeciesError
-
             else:
                 pass
 
