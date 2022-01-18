@@ -71,7 +71,7 @@ class Tool:
     def create_group_lyr(m, grp_lyr, sp_com_name, sp_sci_name):
         arcpy.AddMessage("Run create_group_lyr function.")
 
-        # Naming convention for output group layer:
+        # Naming convention for output group layer in TOC:
         # Common Name (Scientific Name) including data identified to infraspecies level
         grp_lyr_name = "{} ({}) including data identified to infraspecies level".format(sp_com_name, sp_sci_name)
 
@@ -93,7 +93,8 @@ class Tool:
     def create_lyr(m, grp_lyr, speciesid_tuple, ft_type):
         arcpy.AddMessage("Run create_lyr function for {}.".format(ft_type))
 
-        # Naming convention for point/line/polygon layers = InputPoint_SpeciesID+
+        # Naming convention for point/line/polygon layers in TOC:
+        # InputPoint_SpeciesID+ / InputLine_SpeciesID+ / EO_Polygon_SpeciesID+
         lyr_name = "{}_{}+".format(ft_type,
                                    speciesid_tuple[0])  # the original speciesID
 
@@ -140,7 +141,8 @@ class Tool:
     def create_poly_lyr(m, grp_lyr, speciesid_tuple, range_data_list):
         arcpy.AddMessage("Run create_poly_lyr function for InputPolygon.")
 
-        # Naming convention for polygon layer = InputPolygon_SpeciesID
+        # Naming convention for polygon layer in TOC:
+        # InputPolygon_SpeciesID+
         lyr_name = "InputPolygon_{}+".format(speciesid_tuple[0])
 
         if len(m.listLayers("InputPolygon")) > 0:
@@ -182,7 +184,8 @@ class Tool:
     def create_range_lyr(m, grp_lyr, speciesid_tuple, range_type, range_data_list):
         arcpy.AddMessage("Run create_range_lyr function for {}.".format(range_type))
 
-        # Naming convention for Range / Critical Habitat layers = ECCCRangeMaps_SpeciesID / IUCNRangeMaps_
+        # Naming convention for Range / Critical Habitat layers =
+        # ECCCRangeMaps_SpeciesID+ / IUCNRangeMaps_SpeciesID+
         lyr_name = "{}_{}+".format(range_type, speciesid_tuple[0])
 
         # Check that the InputPolygon layer is loaded and that there are records in the range_data_list parameter
