@@ -2,7 +2,7 @@
 # Script Name:      GroupedSpeciesSelectionTool.py
 #
 # Script Created:   2022-01-05
-# Last Updated:     2022-01-05
+# Last Updated:     2022-01-18
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
@@ -71,8 +71,9 @@ class Tool:
     def create_group_lyr(m, grp_lyr, sp_com_name, sp_sci_name):
         arcpy.AddMessage("Run create_group_lyr function.")
 
-        # Naming convention for output group layer: Common Name (Scientific Name) and subspecies
-        grp_lyr_name = "{} ({}) and subspecies".format(sp_com_name, sp_sci_name)
+        # Naming convention for output group layer:
+        # Common Name (Scientific Name) including data identified to infraspecies level
+        grp_lyr_name = "{} ({}) including data identified to infraspecies level".format(sp_com_name, sp_sci_name)
 
         # arcpy.AddMessage("Processing {}.".format(grp_lyr_name))
         # arcpy.AddMessage(grp_lyr.filePath)

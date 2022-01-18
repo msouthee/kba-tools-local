@@ -3,7 +3,7 @@
 # Script Name:      KBAToolsLocal_v1.pyt
 #
 # Script created:   2021-11-18
-# Last Updated:     2022-01-05
+# Last Updated:     2022-01-18
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
@@ -83,7 +83,7 @@ class ToolSingleSpeciesSelection(object):
         param_infraspecies.filter.list = ["Yes", "No"]
 
         # Default selection
-        param_infraspecies.value = "No"
+        param_infraspecies.value = "Yes"
 
         params = [param_table, param_sql, param_infraspecies]
         return params

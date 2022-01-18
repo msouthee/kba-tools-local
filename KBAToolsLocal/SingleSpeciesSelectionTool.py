@@ -2,7 +2,7 @@
 # Script Name:      SingleSpeciesSelectionTool.py
 #
 # Script Created:   2021-10-27
-# Last Updated:     2022-01-05
+# Last Updated:     2022-01-18
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
@@ -66,8 +66,9 @@ class Tool:
     def create_group_lyr(m, grp_lyr, sp_com_name, sp_sci_name):
         arcpy.AddMessage("Run create_group_lyr function.")
 
-        # Naming convention for output group layer: Common Name (Scientific Name)
-        grp_lyr_name = "{} ({})".format(sp_com_name, sp_sci_name)
+        # Naming convention for output group layer:
+        # Common Name (Scientific Name) data not identified to infraspecies level
+        grp_lyr_name = "{} ({}) data not identified to infraspecies level".format(sp_com_name, sp_sci_name)
 
         # Add a copy of the SpeciesData group layer to the TOC (by referencing the .lyrx file written to scratch)
         m.addLayer(grp_lyr, "TOP")
