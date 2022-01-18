@@ -579,7 +579,7 @@ class Tool:
 
         # Error handling for custom input error related to the type of species selected
         except InfraspeciesError:
-            arcpy.AddError("You have selected a species in your SQL statement that is not a full species. "
+            arcpy.AddError("You have selected an infraspecies in your SQL statement. "
                            "This tool is ONLY for full species.")
 
         # Error handling if custom WCSC_KBA_Symbology isn't in the project

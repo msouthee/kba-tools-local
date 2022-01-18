@@ -57,7 +57,9 @@ class ToolSingleSpeciesSelection(object):
 
         # SQL parameter
         param_sql = arcpy.Parameter(
-            displayName='Select a species:',
+            displayName='ADD DATA TO THE MAP SEPARATELY FOR SPECIES AND INFRASPECIES'
+                        '\n\nIf you select a full species, all infraspecies will be processed by default'
+                        '\n\nSelect a species: ',
             name='speciesname',
             datatype='GPSQLExpression',
             parameterType='Required',
@@ -71,9 +73,7 @@ class ToolSingleSpeciesSelection(object):
 
         # Yes/No parameter
         param_infraspecies = arcpy.Parameter(
-            displayName='If you selected an infraspecies, do you want to process the full species as well?'
-                        '\nNote: If you selected a full species, all infraspecies will be included and '
-                        'this dropdown menu will be ignored.',
+            displayName='If you selected an infraspecies, do you want to process the full species too?',
             name='infraspecies',
             datatype='GPString',
             parameterType='Required',
@@ -115,7 +115,7 @@ class ToolGroupedSpeciesSelection(object):
     def __init__(self):
         """Define the Grouped Species Selection Tool."""
         self.label = "Mapping Tool for Species"
-        self.description = "Add data to the map in a single group for a species and all its infraspecies."
+        self.description = "Add data to the map grouped together for a species and all its infraspecies."
         self.canRunInBackground = False
 
     def getParameterInfo(self):
@@ -134,7 +134,8 @@ class ToolGroupedSpeciesSelection(object):
 
         # SQL parameter
         param_sql = arcpy.Parameter(
-            displayName='Select a species:',
+            displayName='ADD DATA TO THE MAP GROUPED TOGETHER FOR A SELECTED SPECIES AND ITS INFRASPECIES'
+                        '\n\nSelect a species (this tool will only run on species):',
             name='speciesname',
             datatype='GPSQLExpression',
             parameterType='Required',
