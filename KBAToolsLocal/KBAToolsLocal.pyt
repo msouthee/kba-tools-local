@@ -37,8 +37,8 @@ class Toolbox(object):
 class ToolSingleSpeciesSelection(object):
     def __init__(self):
         """Define the Single Species Selection Tool."""
-        self.label = "Single Species Selection Tool"
-        self.description = "Use this tool to select all points, lines & polygons for a specific species."
+        self.label = "Data Exploration Tool (Species and/or Infraspecies)"
+        self.description = "Add data to the map separately for species and/or infraspecies."
         self.canRunInBackground = False
 
     def getParameterInfo(self):
@@ -110,12 +110,12 @@ class ToolSingleSpeciesSelection(object):
         return
 
 
-# Define Single Species Selection Tool
+# Define Grouped Species Selection Tool
 class ToolGroupedSpeciesSelection(object):
     def __init__(self):
         """Define the Grouped Species Selection Tool."""
-        self.label = "Grouped Species Selection Tool"
-        self.description = "Use this tool to select all points, lines & polygons for a specific species."
+        self.label = "Mapping Tool for Species"
+        self.description = "Add data to the map in a single group for a species and all its infraspecies."
         self.canRunInBackground = False
 
     def getParameterInfo(self):
