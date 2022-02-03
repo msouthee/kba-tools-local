@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------------------------------------------------
-# Script Name:      SingleSpeciesSelectionTool.py
+# Script Name:      SingleSpeciesSelectionTool.py       "DATA EXPLORATION TOOL"
 #
 # Script Created:   2021-10-27
 # Last Updated:     2022-01-18

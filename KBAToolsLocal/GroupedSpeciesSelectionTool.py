@@ -1,8 +1,8 @@
 # ----------------------------------------------------------------------------------------------------------------------
-# Script Name:      GroupedSpeciesSelectionTool.py
+# Script Name:      GroupedSpeciesSelectionTool.py      "MAPPING TOOL FOR FULL SPECIES"
 #
 # Script Created:   2022-01-05
-# Last Updated:     2022-01-18
+# Last Updated:     2022-02-03
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
@@ -13,6 +13,7 @@
 #                   Contains logic to process full species and their subspecies.
 #                   Contains logic to handle ECCC Range Maps, ECCC Critical Habitat & IUCN Range Maps separately from
 #                   other InputPolygon records.
+#                   Added logic to process data different depending on if the species does or does not have infraspecies
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Import libraries
@@ -68,12 +69,17 @@ class Tool:
     but I don't understand how to get this to work properly."""
 
     # Define a function to create the group layer for a selected record (Function = reusable piece of code)
-    def create_group_lyr(m, grp_lyr, sp_com_name, sp_sci_name):
+    def create_group_lyr(m, grp_lyr, sp_com_name, sp_sci_name, infra):
         arcpy.AddMessage("Run create_group_lyr function.")
 
-        # Naming convention for output group layer in TOC:
-        # Common Name (Scientific Name) including data identified to infraspecies level
-        grp_lyr_name = "{} ({}) including data identified to infraspecies level".format(sp_com_name, sp_sci_name)
+        # Assign naming convention for output group layer in TOC based on infra parameter:
+        if infra is True:
+            # Common Name (Scientific Name) including data identified to infraspecies
+            grp_lyr_name = "{} ({}) including data identified to infraspecies".format(sp_com_name, sp_sci_name)
+
+        else:
+            # Common Name (Scientific Name)
+            grp_lyr_name = "{} ({})".format(sp_com_name, sp_sci_name)
 
         # arcpy.AddMessage("Processing {}.".format(grp_lyr_name))
         # arcpy.AddMessage(grp_lyr.filePath)
@@ -90,20 +96,46 @@ class Tool:
         return group_lyr
 
     # Define a function to create the InputPoint / InputLine / EO_Polygon layer for the species
-    def create_lyr(m, grp_lyr, speciesid_tuple, ft_type):
+    def create_lyr(m, grp_lyr, speciesid_tuple, ft_type, infra):
         arcpy.AddMessage("Run create_lyr function for {}.".format(ft_type))
 
-        # Naming convention for point/line/polygon layers in TOC:
-        # InputPoint_SpeciesID+ / InputLine_SpeciesID+ / EO_Polygon_SpeciesID+
-        lyr_name = "{}_{}+".format(ft_type,
-                                   speciesid_tuple[0])  # the original speciesID
-
-        sql_query = "speciesid IN {}".format(speciesid_tuple)
-        arcpy.AddMessage(sql_query)
+        # # Assign naming conventions & sql query based on value of infra parameter:
+        # if infra is True:
+        #     # InputPoint_SpeciesID+ / InputLine_SpeciesID+ / EO_Polygon_SpeciesID+
+        #     lyr_name = "{}_{}+".format(ft_type, speciesid_tuple[0])  # the original speciesID
+        #
+        #     # select all speciesid values in the tuple
+        #     sql_query = "speciesid IN {}".format(speciesid_tuple)
+        #     arcpy.AddMessage(sql_query)
+        #
+        # else:
+        #     # InputPoint_SpeciesID / InputLine_SpeciesID / EO_Polygon_SpeciesID
+        #     lyr_name = "{}_{}".format(ft_type, speciesid_tuple[0])  # the original speciesID
+        #
+        #     # select only the original species id
+        #     sql_query = "speciesid = {}".format(speciesid_tuple[0])  # the original speciesID
+        #     arcpy.AddMessage(sql_query)
 
         if len(m.listLayers(ft_type)) > 0:
             # Create a variable from the old/existing layer
             lyr = m.listLayers(ft_type)[0]
+
+            # Assign naming conventions & sql query based on value of infra parameter:
+            if infra is True:
+                # InputPoint_SpeciesID+ / InputLine_SpeciesID+ / EO_Polygon_SpeciesID+
+                lyr_name = "{}_{}+".format(ft_type, speciesid_tuple[0])  # the original speciesID
+
+                # select all speciesid values in the tuple
+                sql_query = "speciesid IN {}".format(speciesid_tuple)
+
+            else:
+                # InputPoint_SpeciesID / InputLine_SpeciesID / EO_Polygon_SpeciesID
+                lyr_name = "{}_{}".format(ft_type, speciesid_tuple[0])  # the original speciesID
+
+                # select only the original species id
+                sql_query = "speciesid = {}".format(speciesid_tuple[0])  # the original speciesID
+
+            # arcpy.AddMessage(sql_query)
 
             # Make a new feature layer with sql query and added .getOutput(0) function
             new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, sql_query,
@@ -138,12 +170,17 @@ class Tool:
             raise SpeciesDataError
 
     # Define a function to create the InputPolygon layers for the species (w/out range & critical habitat data)
-    def create_poly_lyr(m, grp_lyr, speciesid_tuple, range_data_list):
+    def create_poly_lyr(m, grp_lyr, speciesid_tuple, range_data_list, infra):
         arcpy.AddMessage("Run create_poly_lyr function for InputPolygon.")
 
-        # Naming convention for polygon layer in TOC:
-        # InputPolygon_SpeciesID+
-        lyr_name = "InputPolygon_{}+".format(speciesid_tuple[0])
+        # # Assign naming convention for polygon layer in TOC based on infra parameter:
+        # if infra is True:
+        #     # InputPolygon_SpeciesID+
+        #     lyr_name = "InputPolygon_{}+".format(speciesid_tuple[0])
+        #
+        # else:
+        #     # InputPolygon_SpeciesID
+        #     lyr_name = "InputPolygon_{}".format(speciesid_tuple[0])
 
         if len(m.listLayers("InputPolygon")) > 0:
             lyr = m.listLayers("InputPolygon")[0]
@@ -151,8 +188,24 @@ class Tool:
             # Convert the range_data_list into string variable separated by commas for use in the SQL statement
             range_data_string = ', '.join(str(i) for i in range_data_list)
 
-            # SQL statement to select InputPolygons for the species w/out Range & Critical Habitat data records
-            range_sql = "speciesid IN {} And inputdatasetid NOT IN ({})".format(speciesid_tuple, range_data_string)
+            # Assign naming conventions for polygon layer in TOC & sql query based on infra parameter:
+            if infra is True:
+                # InputPolygon_SpeciesID+
+                lyr_name = "InputPolygon_{}+".format(speciesid_tuple[0])
+
+                # SQL statement to select InputPolygons for the species w/out Range & Critical Habitat data records
+                range_sql = "speciesid IN {} And inputdatasetid NOT IN ({})".format(speciesid_tuple,
+                                                                                    range_data_string)
+
+            else:
+                # InputPolygon_SpeciesID
+                lyr_name = "InputPolygon_{}".format(speciesid_tuple[0])
+
+                # SQL statement to select InputPolygons for the species w/out Range & Critical Habitat data records
+                range_sql = "speciesid = {} And inputdatasetid NOT IN ({})".format(speciesid_tuple[0],
+                                                                                   range_data_string)
+
+            # arcpy.AddMessage(range_sql)
 
             # Make a new feature layer with sql query and added .getOutput(0) function
             new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, range_sql,
@@ -181,12 +234,17 @@ class Tool:
             raise SpeciesDataError
 
     # Define a function to create the ECCC range / IUCN range / ECCC critical habitat data layers for the species
-    def create_range_lyr(m, grp_lyr, speciesid_tuple, range_type, range_data_list):
+    def create_range_lyr(m, grp_lyr, speciesid_tuple, range_type, range_data_list, infra):
         arcpy.AddMessage("Run create_range_lyr function for {}.".format(range_type))
 
-        # Naming convention for Range / Critical Habitat layers =
-        # ECCCRangeMaps_SpeciesID+ / IUCNRangeMaps_SpeciesID+
-        lyr_name = "{}_{}+".format(range_type, speciesid_tuple[0])
+        # # Assign naming convention for Range / Critical Habitat in TOC based on infra parameter:
+        # if infra is True:
+        #     # ECCCRangeMaps_SpeciesID+ / IUCNRangeMaps_SpeciesID+
+        #     lyr_name = "{}_{}+".format(range_type, speciesid_tuple[0])
+        #
+        # else:
+        #     # ECCCRangeMaps_SpeciesID / IUCNRangeMaps_SpeciesID
+        #     lyr_name = "{}_{}".format(range_type, speciesid_tuple[0])
 
         # Check that the InputPolygon layer is loaded and that there are records in the range_data_list parameter
         if len(m.listLayers("InputPolygon")) > 0 and len(range_data_list) > 0:
@@ -195,8 +253,24 @@ class Tool:
             # Convert the range_data_list into string variable separated by commas for use in the SQL statement
             range_data_string = ', '.join(str(i) for i in range_data_list)
 
-            # SQL statement to select InputPolygons for the species and Range / Critical Habitat data only
-            range_sql = "speciesid IN {} And inputdatasetid IN ({})".format(speciesid_tuple, range_data_string)
+            # Assign naming convention for Range / Critical Habitat in TOC based on infra parameter:
+            if infra is True:
+                # ECCCRangeMaps_SpeciesID+ / IUCNRangeMaps_SpeciesID+
+                lyr_name = "{}_{}+".format(range_type, speciesid_tuple[0])
+
+                # SQL statement to select InputPolygons for the species and Range / Critical Habitat data only
+                range_sql = "speciesid IN {} And inputdatasetid IN ({})".format(speciesid_tuple,
+                                                                                range_data_string)
+
+            else:
+                # ECCCRangeMaps_SpeciesID / IUCNRangeMaps_SpeciesID
+                lyr_name = "{}_{}".format(range_type, speciesid_tuple[0])
+
+                # SQL statement to select InputPolygons for the species and Range / Critical Habitat data only
+                range_sql = "speciesid = {} And inputdatasetid IN ({})".format(speciesid_tuple[0],
+                                                                               range_data_string)
+
+            # arcpy.AddMessage(range_sql)
 
             # Make a new feature layer with sql query and added .getOutput(0) function
             new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, range_sql,
@@ -234,6 +308,174 @@ class Tool:
 
         else:
             raise SpeciesDataError
+
+    # # Define a function to create the group layer for a selected record (Function = reusable piece of code) [OLD FUNC]
+    # def create_group_lyr(m, grp_lyr, sp_com_name, sp_sci_name):
+    #     arcpy.AddMessage("Run create_group_lyr function.")
+    #
+    #     # Naming convention for output group layer in TOC:
+    #     # Common Name (Scientific Name) including data identified to infraspecies
+    #     grp_lyr_name = "{} ({}) including data identified to infraspecies".format(sp_com_name, sp_sci_name)
+    #
+    #     # arcpy.AddMessage("Processing {}.".format(grp_lyr_name))
+    #     # arcpy.AddMessage(grp_lyr.filePath)
+    #
+    #     # Add a copy of the SpeciesData group layer to the TOC (by referencing the .lyrx file written to scratch)
+    #     m.addLayer(grp_lyr, "TOP")
+    #
+    #     # Rename the newly added group layer, because layer was added at top index reference = [0]
+    #     group_lyr = m.listLayers("SpeciesData")[0]
+    #     group_lyr.name = grp_lyr_name  # rename the group layer in TOC
+    #     group_lyr = m.listLayers(grp_lyr_name)[0]
+    #     group_lyr.visible = False  # Turn off the visibility for the group layer
+    #
+    #     return group_lyr
+    #
+    # # Define a function to create the InputPoint / InputLine / EO_Polygon layer for the species
+    # def create_lyr(m, grp_lyr, speciesid_tuple, ft_type):
+    #     arcpy.AddMessage("Run create_lyr function for {}.".format(ft_type))
+    #
+    #     # Naming convention for point/line/polygon layers in TOC:
+    #     # InputPoint_SpeciesID+ / InputLine_SpeciesID+ / EO_Polygon_SpeciesID+
+    #     lyr_name = "{}_{}+".format(ft_type,
+    #                                speciesid_tuple[0])  # the original speciesID
+    #
+    #     sql_query = "speciesid IN {}".format(speciesid_tuple)
+    #     arcpy.AddMessage(sql_query)
+    #
+    #     if len(m.listLayers(ft_type)) > 0:
+    #         # Create a variable from the old/existing layer
+    #         lyr = m.listLayers(ft_type)[0]
+    #
+    #         # Make a new feature layer with sql query and added .getOutput(0) function
+    #         new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, sql_query,
+    #                                                     None).getOutput(0)
+    #
+    #         # Get a count of the records in the new feature layer
+    #         row_count = int(arcpy.GetCount_management(new_lyr).getOutput(0))
+    #
+    #         # Check to see if there are any records for the species
+    #         if row_count != 0:
+    #             m.addLayerToGroup(grp_lyr, new_lyr, "BOTTOM")  # Add the new layer
+    #             new_lyr = m.listLayers(lyr_name)[0]
+    #             new_lyr.visible = False  # Turn off the visibility for the new layer
+    #
+    #             # Check if the current layer is the EO_Polygon layer
+    #             if ft_type == "EO_Polygon":
+    #
+    #                 # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
+    #                 sym = new_lyr.symbology
+    #                 sym.renderer.symbol.applySymbolFromGallery("EO Polygon")
+    #                 new_lyr.symbology = sym
+    #
+    #             else:
+    #                 pass  # Do nothing for the points and the lines
+    #
+    #         else:
+    #             pass
+    #
+    #         m.removeLayer(lyr)  # remove old layer
+    #
+    #     else:
+    #         raise SpeciesDataError
+    #
+    # # Define a function to create the InputPolygon layers for the species (w/out range & critical habitat data)
+    # def create_poly_lyr(m, grp_lyr, speciesid_tuple, range_data_list):
+    #     arcpy.AddMessage("Run create_poly_lyr function for InputPolygon.")
+    #
+    #     # Naming convention for polygon layer in TOC:
+    #     # InputPolygon_SpeciesID+
+    #     lyr_name = "InputPolygon_{}+".format(speciesid_tuple[0])
+    #
+    #     if len(m.listLayers("InputPolygon")) > 0:
+    #         lyr = m.listLayers("InputPolygon")[0]
+    #
+    #         # Convert the range_data_list into string variable separated by commas for use in the SQL statement
+    #         range_data_string = ', '.join(str(i) for i in range_data_list)
+    #
+    #         # SQL statement to select InputPolygons for the species w/out Range & Critical Habitat data records
+    #         range_sql = "speciesid IN {} And inputdatasetid NOT IN ({})".format(speciesid_tuple, range_data_string)
+    #
+    #         # Make a new feature layer with sql query and added .getOutput(0) function
+    #         new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, range_sql,
+    #                                                     None).getOutput(0)
+    #
+    #         # Get a count of the records in the new feature layer
+    #         row_count = int(arcpy.GetCount_management(new_lyr).getOutput(0))
+    #
+    #         # Check to see if there are any records for the species
+    #         if row_count != 0:
+    #             m.addLayerToGroup(grp_lyr, new_lyr, "BOTTOM")  # Add the new poly layer
+    #             new_lyr = m.listLayers(lyr_name)[0]
+    #             new_lyr.visible = False  # Turn off the visibility for the new layer
+    #
+    #             # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
+    #             sym = new_lyr.symbology
+    #             sym.renderer.symbol.applySymbolFromGallery("Input Polygon")
+    #             new_lyr.symbology = sym
+    #
+    #         else:
+    #             pass
+    #
+    #         m.removeLayer(lyr)  # remove poly layer from the new species group
+    #
+    #     else:
+    #         raise SpeciesDataError
+    #
+    # # Define a function to create the ECCC range / IUCN range / ECCC critical habitat data layers for the species
+    # def create_range_lyr(m, grp_lyr, speciesid_tuple, range_type, range_data_list):
+    #     arcpy.AddMessage("Run create_range_lyr function for {}.".format(range_type))
+    #
+    #     # Naming convention for Range / Critical Habitat layers =
+    #     # ECCCRangeMaps_SpeciesID+ / IUCNRangeMaps_SpeciesID+
+    #     lyr_name = "{}_{}+".format(range_type, speciesid_tuple[0])
+    #
+    #     # Check that the InputPolygon layer is loaded and that there are records in the range_data_list parameter
+    #     if len(m.listLayers("InputPolygon")) > 0 and len(range_data_list) > 0:
+    #         lyr = m.listLayers("InputPolygon")[0]
+    #
+    #         # Convert the range_data_list into string variable separated by commas for use in the SQL statement
+    #         range_data_string = ', '.join(str(i) for i in range_data_list)
+    #
+    #         # SQL statement to select InputPolygons for the species and Range / Critical Habitat data only
+    #         range_sql = "speciesid IN {} And inputdatasetid IN ({})".format(speciesid_tuple, range_data_string)
+    #
+    #         # Make a new feature layer with sql query and added .getOutput(0) function
+    #         new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, range_sql,
+    #                                                     None).getOutput(0)
+    #
+    #         # Get a count of the records in the new feature layer
+    #         row_count = int(arcpy.GetCount_management(new_lyr).getOutput(0))
+    #
+    #         # Check to see if there are any records for the species and the Range / Critical Habitat type
+    #         if row_count != 0:
+    #             m.addLayerToGroup(grp_lyr, new_lyr, "BOTTOM")  # Add the new range / critical habitat layer
+    #             new_lyr = m.listLayers(lyr_name)[0]
+    #             new_lyr.visible = False  # Turn off the visibility for the new layer
+    #
+    #             if range_type == "ECCCRangeMaps":
+    #                 # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
+    #                 sym = new_lyr.symbology
+    #                 sym.renderer.symbol.applySymbolFromGallery("ECCC Range Map")
+    #                 new_lyr.symbology = sym
+    #
+    #             elif range_type == "IUCNRangeMaps":
+    #                 # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
+    #                 sym = new_lyr.symbology
+    #                 sym.renderer.symbol.applySymbolFromGallery("IUCN Range Map")
+    #                 new_lyr.symbology = sym
+    #
+    #             else:
+    #                 # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
+    #                 sym = new_lyr.symbology
+    #                 sym.renderer.symbol.applySymbolFromGallery("ECCC Critical Habitat")
+    #                 new_lyr.symbology = sym
+    #
+    #         else:
+    #             pass  # Do nothing
+    #
+    #     else:
+    #         raise SpeciesDataError
 
     # Define a function to run the tool
     def run_tool(self, parameters, messages):
@@ -275,7 +517,7 @@ class Tool:
             arcpy.AddMessage("Scratch folder: {}".format(scratch))
 
             # # START ERROR HANDLING TO CHECK THAT THE MAP CONTAINS THE NECESSARY TABLES AND DATA LAYERS ...............
-            arcpy.AddMessage(u"\u200B")  # Unicode literate to create new line
+            arcpy.AddMessage(u"\u200B")  # Unicode literal to create new line
             arcpy.AddMessage("Start Error Handling Processes...")
 
             """Error handling to check for existence of the "SpeciesData" group layer."""
@@ -381,8 +623,8 @@ class Tool:
             # # END ERROR HANDLING .....................................................................................
 
             # # START DATA PROCESSING ..................................................................................
-            arcpy.AddMessage(u"\u200B")  # Unicode literate to create new line
-            arcpy.AddMessage("Start Processing Records...")
+            arcpy.AddMessage(u"\u200B")  # Unicode literal to create new line
+            arcpy.AddMessage("Start Geoprocessing...")
 
             # Select the record in BIOTICS table based on the user-specified sql expression
             biotics_record = arcpy.management.SelectLayerByAttribute(param_table, "NEW_SELECTION", param_sql)
@@ -441,8 +683,8 @@ class Tool:
             species_table = "Species (view only)"
 
             # The initial selected record must be a full species & the tool will process all sub/infraspecies [GROUPED]
-            arcpy.AddMessage(u"\u200B")  # Unicode literate to create new line
-            arcpy.AddMessage("A full species was selected. Process all infraspecies (if they exist).")
+            arcpy.AddMessage(u"\u200B")  # Unicode literal to create new line
+            arcpy.AddMessage("Check to see if infraspecies exist...")
 
             # Select matching record from Species table for the initial full species record in Biotics
             species_records = arcpy.management.SelectLayerByAttribute(species_table,
@@ -470,23 +712,49 @@ class Tool:
 
             del species_cursor, species_row  # delete some variables
 
+            """ This is where the processing happens to create the outputs in the Contents pane of the current map. 
+            DIFFERENT LOGIC IS IMPLEMENTED BASED ON THE IF/ELSE STATEMENT."""
+
+            # arcpy.AddMessage(speciesid_list)
+
             # Convert the speciesid_list into a tuple (puts the values in round brackets(), not square brackets[])
             speciesid_tuple = tuple(speciesid_list)
-            arcpy.AddMessage(speciesid_tuple)
+            # arcpy.AddMessage(speciesid_tuple)
 
-            """ This is where the bulk of the processing happens to create the grouped output for the species ID values
-            related to the full species."""
+            # # Print the length of the speciesid_list
+            # arcpy.AddMessage(len(speciesid_list))
 
-            # # USE FUNCTIONS TO CREATE GROUP LAYER AND POINTS/LINES/EOS LAYERS ......................................
+            # If the list is only 1 record long, PROCESS FULL SPECIES ONLY
+            if len(speciesid_list) == 1:
+                arcpy.AddMessage("No infraspecies exist.")
+                infraspecies_exist = False
+
+                # CAN YOU FEED IT THE SQL QUERY HERE?
+
+            # Else if the list is longer than one record, PROCESS FULL SPECIES & INFRASPECIES
+            else:
+                arcpy.AddMessage("Infraspecies exist.")
+                infraspecies_exist = True
+
+            # # USE FUNCTIONS TO CREATE GROUP LAYER AND POINTS/LINES/EOS LAYERS ....................................
             # Create the group layer by calling the create_group_lyr() function
-            group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name)
+            group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name, infraspecies_exist)
 
             # Call the create_lyr() function x3 to create the point, lines & EO Layers
-            Tool.create_lyr(m, group_lyr, speciesid_tuple, 'InputPoint')
-            Tool.create_lyr(m, group_lyr, speciesid_tuple, 'InputLine')
-            Tool.create_lyr(m, group_lyr, speciesid_tuple, 'EO_Polygon')
+            Tool.create_lyr(m, group_lyr, speciesid_tuple, 'InputPoint', infraspecies_exist)
+            Tool.create_lyr(m, group_lyr, speciesid_tuple, 'InputLine', infraspecies_exist)
+            Tool.create_lyr(m, group_lyr, speciesid_tuple, 'EO_Polygon', infraspecies_exist)
 
-            # # CREATE LISTS OF INPUT DATASET ID VALUES FOR RANGE MAPS AND CRITICAL HABITAT DATASETS .................
+            # # # USE FUNCTIONS TO CREATE GROUP LAYER AND POINTS/LINES/EOS LAYERS [OLD] ..............................
+            # # Create the group layer by calling the create_group_lyr() function
+            # group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name)
+            #
+            # # Call the create_lyr() function x3 to create the point, lines & EO Layers
+            # Tool.create_lyr(m, group_lyr, speciesid_tuple, 'InputPoint')
+            # Tool.create_lyr(m, group_lyr, speciesid_tuple, 'InputLine')
+            # Tool.create_lyr(m, group_lyr, speciesid_tuple, 'EO_Polygon')
+
+            # # CREATE LISTS OF INPUT DATASET ID VALUES FOR RANGE MAPS AND CRITICAL HABITAT DATASETS ...............
             # # GET LIST OF ECCC RANGE MAP DATASETS
             # Empty list to hold InputDatasetID values for records that correspond to ECCC Range Maps
             eccc_range_data_list = []
@@ -540,15 +808,26 @@ class Tool:
             # Create a list of all the datasets that are Range or Critical Habitat datasets
             range_and_crit_habitat_list = eccc_range_data_list + iucn_range_data_list + crit_habitat_data_list
 
-            # # CREATE OUTPUT LAYERS IN TOC FOR INPUTPOLYGONS, RANGE MAPS AND CRITICAL HABITAT DATASETS ..............
+            # # CREATE OUTPUT LAYERS IN TOC FOR INPUTPOLYGONS, RANGE MAPS AND CRITICAL HABITAT DATASETS ............
             # Call the function to create the InputPolygon layer w/out Range / Critical Habitat data
-            Tool.create_poly_lyr(m, group_lyr, speciesid_tuple, range_and_crit_habitat_list)
+            Tool.create_poly_lyr(m, group_lyr, speciesid_tuple, range_and_crit_habitat_list, infraspecies_exist)
 
-            # Call the create_range_lyr() function x3 to process the range maps and critical habitat data for the
-            # full species only, not for the subspecies because the subspecies don't have range data.
-            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, "ECCCRangeMaps", eccc_range_data_list)
-            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, "IUCNRangeMaps", iucn_range_data_list)
-            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, "ECCCCriticalHabitat", crit_habitat_data_list)
+            # Call the create_range_lyr() function x3 to process the range maps and critical habitat data
+            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, "ECCCRangeMaps", eccc_range_data_list,
+                                  infraspecies_exist)
+            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, "IUCNRangeMaps", iucn_range_data_list,
+                                  infraspecies_exist)
+            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, "ECCCCriticalHabitat", crit_habitat_data_list,
+                                  infraspecies_exist)
+
+            # # # CREATE OUTPUT LAYERS IN TOC FOR INPUTPOLYGONS, RANGE MAPS AND CRITICAL HABITAT DATASETS [OLD] ......
+            # # Call the function to create the InputPolygon layer w/out Range / Critical Habitat data
+            # Tool.create_poly_lyr(m, group_lyr, speciesid_tuple, range_and_crit_habitat_list)
+            #
+            # # Call the create_range_lyr() function x3 to process the range maps and critical habitat data
+            # Tool.create_range_lyr(m, group_lyr, speciesid_tuple, "ECCCRangeMaps", eccc_range_data_list)
+            # Tool.create_range_lyr(m, group_lyr, speciesid_tuple, "IUCNRangeMaps", iucn_range_data_list)
+            # Tool.create_range_lyr(m, group_lyr, speciesid_tuple, "ECCCCriticalHabitat", crit_habitat_data_list)
 
             m.clearSelection()  # clear all selections
             arcpy.AddMessage("End of script.")
