@@ -121,33 +121,75 @@ class ToolGroupedSpeciesSelection(object):
     def getParameterInfo(self):
         """Define parameter definitions."""
 
-        # Table parameter. Because parameterType = Derived, this parameter will NOT show up in the Tool dialog window.
-        param_table = arcpy.Parameter(
-            displayName='Biotics Table',
-            name='biotics',
-            datatype='GPTableView',
-            parameterType='Derived',
-            direction='Input')
+        # # Table parameter. Because parameterType = Derived, this parameter will NOT show up in the Tool dialog window.
+        # param_table = arcpy.Parameter(
+        #     displayName='Biotics Table',
+        #     name='biotics',
+        #     datatype='GPTableView',
+        #     parameterType='Derived',
+        #     direction='Input')
+        #
+        # # Default table to populate in the tool.
+        # param_table.value = "BIOTICS_ELEMENT_NATIONAL"  # run local & server. User-friendly SQL statements available
+        #
+        # # SQL parameter
+        # param_sql = arcpy.Parameter(
+        #     displayName='ADD DATA TO THE MAP GROUPED TOGETHER FOR A SELECTED SPECIES AND ITS INFRASPECIES'
+        #                 '\n\nSelect a species (this tool will only run on species):',
+        #     name='speciesname',
+        #     datatype='GPSQLExpression',
+        #     parameterType='Required',
+        #     direction='Input')
+        #
+        # # Set the parameter dependency to create an sql expression based on the input table
+        # param_sql.parameterDependencies = [param_table.name]
+        #
+        # # Default sql query
+        # param_sql.value = "national_scientific_name = 'Acaulon muticum'"
+        #
+        # # params = [param_table, param_sql]
+        # # return params
+        #
+        # # NEW TEST PARAMETER
+        # param_string = arcpy.Parameter(
+        #     displayName="Species Name String",
+        #     name="speciesnamestring",
+        #     datatype="GPString",
+        #     parameterType="Required",
+        #     direction="Input")
+        #
+        # # Set the parameter dependency to create an sql expression based on the input table
+        # param_string.parameterDependencies = [param_table.name]
+        #
+        # biotics_species = arcpy.da.SearchCursor('BIOTICS_ELEMENT_NATIONAL', 'national_scientific_name',
+        #                                         "ca_nname_level = 'Species'")
+        #
+        # # Set a filter to use a ValueList and populate the values from the biotics_species SearchCursor
+        # param_string.filter.type = "ValueList"
+        # param_string.filter.list = sorted([row[0] for row in biotics_species])
+        #
+        # params = [param_table, param_sql, param_string]
 
-        # Default table to populate in the tool.
-        param_table.value = "BIOTICS_ELEMENT_NATIONAL"  # run local & server. User-friendly SQL statements available
+        # NEW TEST PARAMETER AS THE ONLY PARAMETER
+        param_string = arcpy.Parameter(
+            displayName="Species Name:",
+            name="speciesnamestring",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
 
-        # SQL parameter
-        param_sql = arcpy.Parameter(
-            displayName='ADD DATA TO THE MAP GROUPED TOGETHER FOR A SELECTED SPECIES AND ITS INFRASPECIES'
-                        '\n\nSelect a species (this tool will only run on species):',
-            name='speciesname',
-            datatype='GPSQLExpression',
-            parameterType='Required',
-            direction='Input')
+        # # Set the parameter dependency to create an sql expression based on the input table
+        # param_string.parameterDependencies = [param_table.name]
 
-        # Set the parameter dependency to create an sql expression based on the input table
-        param_sql.parameterDependencies = [param_table.name]
+        biotics_species = arcpy.da.SearchCursor('BIOTICS_ELEMENT_NATIONAL', 'national_scientific_name',
+                                                "ca_nname_level = 'Species'")
 
-        # Default sql query
-        param_sql.value = "national_scientific_name = 'Acaulon muticum'"
+        # Set a filter to use a ValueList and populate the values from the biotics_species SearchCursor
+        param_string.filter.type = "ValueList"
+        param_string.filter.list = sorted([row[0] for row in biotics_species])
 
-        params = [param_table, param_sql]
+        params = [param_string]
+
         return params
 
     def isLicensed(self):
