@@ -2,7 +2,7 @@
 # Script Name:      GroupedSpeciesSelectionTool.py      "MAPPING TOOL FOR FULL SPECIES"
 #
 # Script Created:   2022-01-05
-# Last Updated:     2022-02-03
+# Last Updated:     2022-02-07
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
@@ -13,7 +13,8 @@
 #                   Contains logic to process full species and their subspecies.
 #                   Contains logic to handle ECCC Range Maps, ECCC Critical Habitat & IUCN Range Maps separately from
 #                   other InputPolygon records.
-#                   Added logic to process data different depending on if the species does or does not have infraspecies
+#                   Added logic to create different output datasets depending on if the species does or does not
+#                   have infraspecies.
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Import libraries
@@ -481,10 +482,15 @@ class Tool:
     def run_tool(self, parameters, messages):
 
         # Make variables from parameters
-        param_table = parameters[0].valueAsText
-        param_sql = parameters[1].valueAsText
+        # param_table = parameters[0].valueAsText
+        # param_sql = parameters[1].valueAsText
+        param_string = parameters[0].valueAsText
 
-        arcpy.AddMessage("Parameters: {0}, {1}".format(param_table, param_sql))
+        # arcpy.AddMessage("Parameters: {0}, {1}".format(param_table, param_sql))
+        arcpy.AddMessage("Parameter: {0}".format(param_string))
+
+        sql = "national_scientific_name = '{}'".format(param_string)
+        arcpy.AddMessage(sql)
 
         # # species level list based on the Canadian national name level [ca_nname_level] field
         # sp_level_list = ["species",
@@ -627,7 +633,10 @@ class Tool:
             arcpy.AddMessage("Start Geoprocessing...")
 
             # Select the record in BIOTICS table based on the user-specified sql expression
-            biotics_record = arcpy.management.SelectLayerByAttribute(param_table, "NEW_SELECTION", param_sql)
+            # biotics_record = arcpy.management.SelectLayerByAttribute(param_table, "NEW_SELECTION", param_sql)
+            biotics_record = arcpy.management.SelectLayerByAttribute("BIOTICS_ELEMENT_NATIONAL",
+                                                                     "NEW_SELECTION",
+                                                                     sql)
 
             # Logic to check that only one record is selected in the initial query
             biotics_count = int(arcpy.GetCount_management(biotics_record).getOutput(0))
@@ -649,7 +658,8 @@ class Tool:
             speciesid_list = []
 
             # Get record details from Biotics table using a search cursor for the selected record
-            with arcpy.da.SearchCursor(param_table, biotics_fields, param_sql) as biotics_cursor:
+            # with arcpy.da.SearchCursor(param_table, biotics_fields, param_sql) as biotics_cursor:
+            with arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL", biotics_fields, sql) as biotics_cursor:
                 for row in biotics_cursor:
                     # Assign variables from the record based on the list order in biotics_fields variable
                     speciesid = row[0]
@@ -728,8 +738,6 @@ class Tool:
             if len(speciesid_list) == 1:
                 arcpy.AddMessage("No infraspecies exist.")
                 infraspecies_exist = False
-
-                # CAN YOU FEED IT THE SQL QUERY HERE?
 
             # Else if the list is longer than one record, PROCESS FULL SPECIES & INFRASPECIES
             else:
@@ -901,19 +909,19 @@ class Tool:
             # print(msgs)
 
 
-# Controlling process
-if __name__ == '__main__':
-    # Set sst to an instance of class Tool
-    gst = Tool()
-
-    # Hard-coded parameters for debugging
-    param_table = arcpy.Parameter()
-    param_sql = arcpy.Parameter()
-
-    param_table.value = "BIOTICS_ELEMENT_NATIONAL"  # run local & server. User-friendly SQL statements.
-    param_sql.value = "national_scientific_name = 'Acaulon muticum'"
-
-    parameters = [param_table, param_sql]
-
-    # Call the run_tool function using the input parameters (for the sst instance of class Tool)
-    gst.run_tool(parameters, None)
+# # Controlling process [OLD]
+# if __name__ == '__main__':
+    # # Set sst to an instance of class Tool
+    # gst = Tool()
+    #
+    # # Hard-coded parameters for debugging
+    # param_table = arcpy.Parameter()
+    # param_sql = arcpy.Parameter()
+    #
+    # param_table.value = "BIOTICS_ELEMENT_NATIONAL"  # run local & server. User-friendly SQL statements.
+    # param_sql.value = "national_scientific_name = 'Acaulon muticum'"
+    #
+    # parameters = [param_table, param_sql]
+    #
+    # # Call the run_tool function using the input parameters (for the sst instance of class Tool)
+    # gst.run_tool(parameters, None)
