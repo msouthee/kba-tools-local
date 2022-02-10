@@ -14,11 +14,13 @@
 import arcpy
 import FullSpeciesMappingTool
 import SingleSpeciesSelectionTool
+import FullSpeciesScopingTool
 
 # Reload your module in the Python toolbox
 import importlib
 importlib.reload(FullSpeciesMappingTool)
 importlib.reload(SingleSpeciesSelectionTool)
+importlib.reload(FullSpeciesScopingTool)
 
 
 # Define Toolbox
@@ -30,7 +32,8 @@ class Toolbox(object):
 
         # List of tool classes associated with this toolbox
         self.tools = [ToolFullSpeciesMapping,
-                      ToolSingleSpeciesSelection]
+                      ToolSingleSpeciesSelection,
+                      ToolFullSpeciesScoping]
 
 
 # Define Full Species Mapping Tool (Tool 1)
