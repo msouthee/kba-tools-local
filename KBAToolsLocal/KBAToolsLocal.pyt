@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------------------------------------------------
-# Script Name:      KBAToolsLocal_v1.pyt
+# Script Name:      KBAToolsLocal_v2.pyt
 #
 # Script created:   2021-11-18
 # Last Updated:     2022-02-10
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
-# Purpose:          Python Toolbox to hold the KBAToolsLocal to be run by regional coordinators on local computers.
+# Purpose:          Python Toolbox to hold the LocalKBATools to be run by regional coordinators on local computers.
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Import libraries and modules
@@ -43,7 +43,6 @@ class ToolFullSpeciesMapping(object):
 
     def getParameterInfo(self):
         """Define parameter definitions."""
-
         param_species = arcpy.Parameter(
             displayName="Species Name:",
             name="speciesnamestring",
@@ -61,7 +60,6 @@ class ToolFullSpeciesMapping(object):
         param_species.filter.list = sorted([row[0] for row in biotics_species])
 
         params = [param_species]
-
         return params
 
     def isLicensed(self):
@@ -86,7 +84,7 @@ class ToolFullSpeciesMapping(object):
         return
 
 
-# Define Single Species Selection Tool
+# Define Single Species Selection Tool [HYBRID TOOL 2 & 3]
 class ToolSingleSpeciesSelection(object):
     def __init__(self):
         """Define the Single Species Selection Tool."""
@@ -160,6 +158,57 @@ class ToolSingleSpeciesSelection(object):
         """The source code of the tool."""
         sst = SingleSpeciesSelectionTool.Tool()
         sst.run_tool(parameters, messages)
+        return
+
+
+# Define Full Species Scoping Tool (Tool 3)
+class ToolFullSpeciesScoping(object):
+    def __init__(self):
+        """Define the Full Species Scoping Tool (Tool 3)."""
+        self.label = "Scoping Tool for Species"
+        self.description = "Add data to the map in seperate group for a species and all its infraspecies."
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        """Define parameter definitions."""
+        param_species = arcpy.Parameter(
+            displayName="Species Name:",
+            name="speciesnamestring",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+
+        # Create a search cursor to filter the values based on the full species names
+        biotics_species = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+                                                "national_scientific_name",
+                                                "ca_nname_level = 'Species'")
+
+        # Set a parameter filter to use a ValueList and populate the values from the biotics_species SearchCursor
+        param_species.filter.type = "ValueList"
+        param_species.filter.list = sorted([row[0] for row in biotics_species])
+
+        params = [param_species]
+        return params
+
+    def isLicensed(self):
+        """Set whether tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter.  This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        fsst = FullSpeciesScopingTool.Tool()
+        fsst.run_tool(parameters, messages)
         return
 
 
