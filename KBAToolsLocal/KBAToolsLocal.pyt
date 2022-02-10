@@ -22,6 +22,16 @@ importlib.reload(FullSpeciesMappingTool)
 importlib.reload(SingleSpeciesSelectionTool)
 importlib.reload(FullSpeciesScopingTool)
 
+# Create a search cursor to filter the values to show only full species names
+biotics_species = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+                                        "national_scientific_name",
+                                        "ca_nname_level = 'Species'")
+
+# Create a search cursor to filter the values to show only full species names
+biotics_infraspecies = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+                                             "national_scientific_name",
+                                             "ca_nname_level != 'Species'")
+
 
 # Define Toolbox
 class Toolbox(object):
@@ -52,11 +62,6 @@ class ToolFullSpeciesMapping(object):
             datatype="GPString",
             parameterType="Required",
             direction="Input")
-
-        # Create a search cursor to filter the values based on the full species names
-        biotics_species = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
-                                                "national_scientific_name",
-                                                "ca_nname_level = 'Species'")
 
         # Set a parameter filter to use a ValueList and populate the values from the biotics_species SearchCursor
         param_species.filter.type = "ValueList"
@@ -169,7 +174,7 @@ class ToolFullSpeciesScoping(object):
     def __init__(self):
         """Define the Full Species Scoping Tool (Tool 3)."""
         self.label = "Scoping Tool for Species"
-        self.description = "Add data to the map in seperate group for a species and all its infraspecies."
+        self.description = "Add data to the map in separate group for a species and all its infraspecies."
         self.canRunInBackground = False
 
     def getParameterInfo(self):
@@ -181,10 +186,10 @@ class ToolFullSpeciesScoping(object):
             parameterType="Required",
             direction="Input")
 
-        # Create a search cursor to filter the values based on the full species names
-        biotics_species = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
-                                                "national_scientific_name",
-                                                "ca_nname_level = 'Species'")
+        # # Create a search cursor to filter the values based on the full species names
+        # biotics_species = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+        #                                         "national_scientific_name",
+        #                                         "ca_nname_level = 'Species'")
 
         # Set a parameter filter to use a ValueList and populate the values from the biotics_species SearchCursor
         param_species.filter.type = "ValueList"
@@ -201,7 +206,21 @@ class ToolFullSpeciesScoping(object):
         """Modify the values and properties of parameters before internal
         validation is performed.  This method is called whenever a parameter
         has been changed."""
-        return
+        param_species = arcpy.Parameter(
+            displayName="Species Name:",
+            name="speciesnamestring",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+
+        # Set a parameter filter to use a ValueList and populate the values from the biotics_species SearchCursor
+        param_species.filter.type = "ValueList"
+        param_species.filter.list = sorted([row[0] for row in biotics_species])
+
+        params = [param_species]
+        return params
+
+        # return
 
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
