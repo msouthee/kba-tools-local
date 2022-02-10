@@ -68,15 +68,6 @@ class Tool:
     def create_group_lyr(m, grp_lyr, sp_com_name, sp_sci_name, infra_exists, sp_level):
         arcpy.AddMessage("Run create_group_lyr function.")
 
-        # # Assign naming convention for output group layer in TOC based on infra parameter:
-        # if infra_exists is True:
-        #     # Common Name (Scientific Name) data not identified to infraspecies
-        #     grp_lyr_name = "{} ({}) data not identified to infraspecies".format(sp_com_name, sp_sci_name)
-        #
-        # else:
-        #     # Common Name (Scientific Name)
-        #     grp_lyr_name = "{} ({})".format(sp_com_name, sp_sci_name)
-
         # Assign naming convention for output group layer in TOC based on infra & species level parameters:
         if infra_exists is True and sp_level == "Species":
             # Common Name (Scientific Name) data not identified to infraspecies
@@ -485,12 +476,12 @@ class Tool:
 
             # # USE FUNCTIONS TO CREATE GROUP LAYER AND POINTS/LINES/EOS LAYERS [FOR FULL SPECIES] ...................
             # Create the group layer by calling the create_group_lyr() function
-            group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name, infraspecies_exist, s_level)
+            species_group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name, infraspecies_exist, s_level)
 
             # Call the create_lyr() function x3 to create the point, lines & EO Layers
-            Tool.create_lyr(m, group_lyr, speciesid, 'InputPoint')
-            Tool.create_lyr(m, group_lyr, speciesid, 'InputLine')
-            Tool.create_lyr(m, group_lyr, speciesid, 'EO_Polygon')
+            Tool.create_lyr(m, species_group_lyr, speciesid, 'InputPoint')
+            Tool.create_lyr(m, species_group_lyr, speciesid, 'InputLine')
+            Tool.create_lyr(m, species_group_lyr, speciesid, 'EO_Polygon')
 
             # # CREATE LISTS OF INPUT DATASET ID VALUES FOR RANGE MAPS AND CRITICAL HABITAT DATASETS ...............
 
@@ -549,12 +540,12 @@ class Tool:
 
             # # CREATE OUTPUT LAYERS IN TOC FOR INPUTPOLYGONS, RANGE MAPS AND CRITICAL HABITAT DATASETS ............
             # Call the function to create the InputPolygon layer w/out Range / Critical Habitat data
-            Tool.create_poly_lyr(m, group_lyr, speciesid, range_and_crit_habitat_list)
+            Tool.create_poly_lyr(m, species_group_lyr, speciesid, range_and_crit_habitat_list)
 
             # Call the create_range_lyr() function x3 to process the range maps and critical habitat data
-            Tool.create_range_lyr(m, group_lyr, speciesid, "ECCCRangeMaps", eccc_range_data_list)
-            Tool.create_range_lyr(m, group_lyr, speciesid, "IUCNRangeMaps", iucn_range_data_list)
-            Tool.create_range_lyr(m, group_lyr, speciesid, "ECCCCriticalHabitat", crit_habitat_data_list)
+            Tool.create_range_lyr(m, species_group_lyr, speciesid, "ECCCRangeMaps", eccc_range_data_list)
+            Tool.create_range_lyr(m, species_group_lyr, speciesid, "IUCNRangeMaps", iucn_range_data_list)
+            Tool.create_range_lyr(m, species_group_lyr, speciesid, "ECCCCriticalHabitat", crit_habitat_data_list)
 
             """After you process the full species, you have to process the infraspecies (if they exist)."""
 
@@ -597,7 +588,7 @@ class Tool:
                                                                     infraspecies_exist, s_level)
 
                             # Move the infraspecies group layer below the species group layer
-                            m.moveLayer(group_lyr, infra_group_lyr, "AFTER")
+                            m.moveLayer(species_group_lyr, infra_group_lyr, "AFTER")
 
                             # Call the create_lyr() function x3 for points, lines & EOs
                             Tool.create_lyr(m, infra_group_lyr, speciesid, 'InputPoint')
@@ -616,10 +607,10 @@ class Tool:
             m.clearSelection()  # clear all selections
 
             # Check to see if there are data layers in the full species group layer, if empty delete it
-            if len(group_lyr.listLayers()) > 0:
+            if len(species_group_lyr.listLayers()) > 0:
                 pass
             else:
-                m.removeLayer(group_lyr)
+                m.removeLayer(species_group_lyr)
                 arcpy.AddWarning("There is no spatial data for this species.")
 
             arcpy.AddMessage("End of script.")
@@ -655,7 +646,7 @@ class Tool:
         # Error handling if an error occurs while using a Geoprocessing Tool in the script
         except arcpy.ExecuteError:
             # If the script crashes, remove the group layer
-            m.removeLayer(group_lyr)
+            m.removeLayer(species_group_lyr)
 
             # Get the tool error messages
             msgs = arcpy.GetMessages(2)
@@ -669,7 +660,7 @@ class Tool:
         # Error handling if the script fails for other unexplained reasons
         except:
             # If the script crashes, remove the group layer
-            m.removeLayer(group_lyr)
+            m.removeLayer(species_group_lyr)
 
             # Get the traceback object
             tb = sys.exc_info()[2]
