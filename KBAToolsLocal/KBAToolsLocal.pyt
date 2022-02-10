@@ -81,8 +81,8 @@ class ToolFullSpeciesMapping(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        gst = FullSpeciesMappingTool.Tool()
-        gst.run_tool(parameters, messages)
+        fsmt = FullSpeciesMappingTool.Tool()
+        fsmt.run_tool(parameters, messages)
         return
 
 
