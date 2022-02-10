@@ -1,5 +1,15 @@
 # ----------------------------------------------------------------------------------------------------------------------
-# Script Name:      SingleSpeciesSelectionTool.py       "DATA EXPLORATION TOOL"
+# Script Name:      SingleSpeciesSelectionTool.py       "DATA EXPLORATION TOOL" [HYBRID OF TOOL 2 & 3]
+
+"""
+NOT UPDATED TO HANDLE LOGIC FOR INFRASPECIES DIFFERENTLY WHEN THE USER MUST SELECT A FULL SPECIES FROM A DROPDOWN,
+IT HAS THE LOGIC IMPLEMENTED BASED ON THE INFRASPECIES TOGGLE.  THIS SCRIPT SHOULD PROBABLY BE TURNED INTO TOOL #2 -
+THE MAPPING TOOL FOR INFRASPECIES BECAUSE THAT IS THE TOOL THAT HAS THE INFRASPECIES TOGGLE PARAMETER.
+
+THE SKELETON OF THE FULLSPECIESMAPPING TOOL SCRIPT SHOULD BE USED TO CREATE TOOL #3 - FULL SPECIES SCOPING TOOL - AND
+LOGIC FROM THE ARCHIVED SINGLESPECIESSELECTION TOOL SHOULD BE USED TO FILL IN THE FUNCTIONALITY.
+"""
+
 #
 # Script Created:   2021-10-27
 # Last Updated:     2022-01-18
@@ -695,21 +705,21 @@ class Tool:
             # print(msgs)
 
 
-# Controlling process
-if __name__ == '__main__':
-    # Set sst to an instance of class Tool
-    sst = Tool()
-
-    # Hard-coded parameters for debugging
-    param_table = arcpy.Parameter()
-    param_sql = arcpy.Parameter()
-    param_infraspecies = arcpy.Parameter()
-
-    param_table.value = "BIOTICS_ELEMENT_NATIONAL"  # run local & server. User-friendly SQL statements.
-    param_sql.value = "national_scientific_name = 'Abronia latifolia'"
-    param_infraspecies = "No"
-
-    parameters = [param_table, param_sql, param_infraspecies]
-
-    # Call the run_tool function using the input parameters (for the sst instance of class Tool)
-    sst.run_tool(parameters, None)
+# # Controlling process
+# if __name__ == '__main__':
+#     # Set sst to an instance of class Tool
+#     sst = Tool()
+#
+#     # Hard-coded parameters for debugging
+#     param_table = arcpy.Parameter()
+#     param_sql = arcpy.Parameter()
+#     param_infraspecies = arcpy.Parameter()
+#
+#     param_table.value = "BIOTICS_ELEMENT_NATIONAL"  # run local & server. User-friendly SQL statements.
+#     param_sql.value = "national_scientific_name = 'Abronia latifolia'"
+#     param_infraspecies = "No"
+#
+#     parameters = [param_table, param_sql, param_infraspecies]
+#
+#     # Call the run_tool function using the input parameters (for the sst instance of class Tool)
+#     sst.run_tool(parameters, None)

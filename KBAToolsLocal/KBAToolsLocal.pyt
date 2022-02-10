@@ -52,8 +52,8 @@ class ToolFullSpeciesMapping(object):
             direction="Input")
 
         # Create a search cursor to filter the values based on the full species names
-        biotics_species = arcpy.da.SearchCursor('BIOTICS_ELEMENT_NATIONAL',
-                                                'national_scientific_name',
+        biotics_species = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+                                                "national_scientific_name",
                                                 "ca_nname_level = 'Species'")
 
         # Set a parameter filter to use a ValueList and populate the values from the biotics_species SearchCursor
