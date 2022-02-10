@@ -587,7 +587,7 @@ class Tool:
             # Delete the old variables from the biotics record
             del speciesid, element_code, s_level, sci_name, common_name
 
-            # PROCESS THE ADDITIONAL RECORDS USING THE SPECIESID_LIST [ IMPLEMENTED] .........................
+            # PROCESS THE ADDITIONAL RECORDS USING THE SPECIESID_LIST [IMPLEMENTED] .........................
             if len(speciesid_list) < 1:
                 arcpy.AddMessage("No additional records to process.")
                 pass  # Do nothing and go to end of script
