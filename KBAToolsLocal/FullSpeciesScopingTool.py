@@ -492,35 +492,24 @@ class Tool:
             """ This is where the processing happens to create the outputs in the Contents pane of the current map. 
             DIFFERENT LOGIC IS IMPLEMENTED BASED ON THE IF/ELSE STATEMENT."""
 
-
             # Check to see if there are infraspecies in the speciesid_list
             # If the list has any records, then you need to PROCESS FULL SPECIES & INFRASPECIES
             if len(speciesid_list) > 0:
                 # PROCESS SPECIES WITH INFRASPECIES
-                arcpy.AddMessage("This species has infraspecies that need to be processed.")
+                arcpy.AddMessage("This species has {} infraspecies that need to be processed.".
+                                 format(str(len(speciesid_list))))
                 infraspecies_exist = True
+
+                # Convert the speciesid_list into a tuple (puts the values in round brackets(), not square brackets[])
+                speciesid_tuple = tuple(speciesid_list)
+                # arcpy.AddMessage(speciesid_tuple)
 
             else:
                 # PROCESS FULL SPECIES ALONE
                 arcpy.AddMessage("This species does not have infraspecies.")
                 infraspecies_exist = False
 
-            # Convert the speciesid_list into a tuple (puts the values in round brackets(), not square brackets[])
-            speciesid_tuple = tuple(speciesid_list)
-            # arcpy.AddMessage(speciesid_tuple)
 
-            # Print the length of the speciesid_list
-            arcpy.AddMessage(len(speciesid_list))
-
-            # # If the list is only 1 record long, PROCESS FULL SPECIES ONLY
-            # if len(speciesid_list) == 1:
-            #     arcpy.AddMessage("No infraspecies exist.")
-            #     infraspecies_exist = False
-            #
-            # # Else if the list is longer than one record, PROCESS FULL SPECIES & INFRASPECIES
-            # else:
-            #     arcpy.AddMessage("Infraspecies exist.")
-            #     infraspecies_exist = True
 
             # # USE FUNCTIONS TO CREATE GROUP LAYER AND POINTS/LINES/EOS LAYERS ....................................
             # Create the group layer by calling the create_group_lyr() function
@@ -599,6 +588,12 @@ class Tool:
             #                       infraspecies_exist)
             #
             # m.clearSelection()  # clear all selections
+
+            # Check to see if there are any layers in the group layer, if empty delete it
+            if len(group_lyr.listLayers()) > 0:
+                pass
+            else:
+                m.removeLayer(group_lyr)
 
             arcpy.AddMessage("End of script.")
 

@@ -595,6 +595,14 @@ class Tool:
                                   infraspecies_exist)
 
             m.clearSelection()  # clear all selections
+
+            # Check to see if there are any layers in the full species group layer, if empty delete it
+            if len(group_lyr.listLayers()) > 0:
+                pass
+            else:
+                m.removeLayer(group_lyr)
+                arcpy.AddWarning("There is no spatial data for this species.")
+
             arcpy.AddMessage("End of script.")
 
         # Error handling for custom error related to required data layers in the map
