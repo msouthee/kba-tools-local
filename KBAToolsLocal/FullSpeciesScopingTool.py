@@ -1,21 +1,22 @@
 # ----------------------------------------------------------------------------------------------------------------------
-# Script Name:      FullSpeciesMappingTool.py      "TOOL 1 - MAPPING TOOL FOR FULL SPECIES"
+# Script Name:      FullSpeciesScopingTool.py      "TOOL 3 - SCOPING TOOL FOR FULL SPECIES"
 #
-# Script Created:   2022-01-05
+# Script Created:   2022-02-10
 # Last Updated:     2022-02-10
 # Script Author:    Meg Southee
-# Credits:          © WCS Canada / Meg Southee 2021
+# Credits:          © WCS Canada / Meg Southee 2022
 #
-# Purpose:          Create definition queries and add the output data layers (with valid data) under a species heading
-#                   into the TOC in the active map.
-#                   Process data for multiple associated species records using a LIKE statement.
-#                   Creates output data that is grouped for multiple species ID values.
-#                   Contains logic to process full species and their subspecies.
-#                   Contains logic to handle ECCC Range Maps, ECCC Critical Habitat & IUCN Range Maps separately from
-#                   other InputPolygon records.
-#                   Added logic to create different output datasets depending on if the species does or does not
-#                   have infraspecies.
+# Purpose:          Add the output data layers (with valid data) to separate groups for full species and each
+#                   infraspecies.
 # ----------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
 
 # Import libraries
 import arcpy
@@ -61,10 +62,9 @@ class Tool:
     def __init__(self):
         pass
 
-    """These functions are called from within the run_tool function. The first parameter should be self, 
-    but I don't understand how to get this to work properly."""
+    """These functions are called from within the run_tool function."""
 
-    # Define a function to create the group layer for a selected record (Function = reusable piece of code)
+    # Define a function to create the group layer for a selected record
     def create_group_lyr(m, grp_lyr, sp_com_name, sp_sci_name, infra):
         arcpy.AddMessage("Run create_group_lyr function.")
 
@@ -461,12 +461,12 @@ class Tool:
             # Append the speciesid value from the SQL statement to the speciesid_list
             speciesid_list.append(speciesid)
 
-            # # FIND ALL RELATED RECORDS THAT NEED TO BE PROCESSED .....................................................
+            # # CHECK TO SEE IF THERE ARE RELATED RECORDS [INFRASPECIES] THAT NEED TO BE PROCESSED ...................
             # Assign variables related to the species table and the species id sql statement
             speciesid_sql = "speciesid = {}".format(speciesid)
             species_table = "Species (view only)"
 
-            # The initial selected record is full species & the tool will process all infraspecies [GROUPED w/ SPECIES]
+            # The initial selected record is full species & the tool will process all infraspecies [SEPARATE GROUPS]
             arcpy.AddMessage(u"\u200B")  # Unicode literal to create new line
             arcpy.AddMessage("Check to see if infraspecies exist...")
 
@@ -621,11 +621,6 @@ class Tool:
         except BioticsSQLError:
             arcpy.AddError("Incorrect SQL statement. See Messages tab for more details.")
 
-        # # Error handling for custom input error related to the type of species selected
-        # except InfraspeciesError:
-        #     arcpy.AddError("You have selected an infraspecies in your SQL statement. "
-        #                    "This tool is ONLY for full species.")
-
         # Error handling if custom WCSC_KBA_Symbology isn't in the project
         except SymbologyError:
             arcpy.AddError("You need to add the WCSC_KBA_Symbology from Portal to the current Project.")
@@ -661,24 +656,4 @@ class Tool:
             arcpy.AddError(pymsg)
             arcpy.AddError(msgs)
 
-            # # Print Python error messages for use in Python / Python window
-            # print(pymsg)
-            # print(msgs)
-
-
-# # Controlling process [OLD]
-# if __name__ == '__main__':
-    # # Set sst to an instance of class Tool
-    # gst = Tool()
-    #
-    # # Hard-coded parameters for debugging
-    # param_table = arcpy.Parameter()
-    # param_sql = arcpy.Parameter()
-    #
-    # param_table.value = "BIOTICS_ELEMENT_NATIONAL"  # run local & server. User-friendly SQL statements.
-    # param_sql.value = "national_scientific_name = 'Acaulon muticum'"
-    #
-    # parameters = [param_table, param_sql]
-    #
-    # # Call the run_tool function using the input parameters (for the sst instance of class Tool)
-    # gst.run_tool(parameters, None)
+# End of Script
