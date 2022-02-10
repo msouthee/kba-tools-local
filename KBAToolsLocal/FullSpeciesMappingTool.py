@@ -1,8 +1,8 @@
 # ----------------------------------------------------------------------------------------------------------------------
-# Script Name:      GroupedSpeciesSelectionTool.py      "MAPPING TOOL FOR FULL SPECIES"
+# Script Name:      FullSpeciesMappingTool.py      "TOOL 1 - MAPPING TOOL FOR FULL SPECIES"
 #
 # Script Created:   2022-01-05
-# Last Updated:     2022-02-07
+# Last Updated:     2022-02-10
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #

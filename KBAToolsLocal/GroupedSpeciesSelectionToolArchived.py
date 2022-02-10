@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------------------------------------------------
-# Script Name:      GroupedSpeciesSelectionTool.py      "MAPPING TOOL FOR FULL SPECIES"
+# Script Name:      FullSpeciesMappingTool.py      "MAPPING TOOL FOR FULL SPECIES"
 #
 # Script Created:   2022-01-05
 # Last Updated:     2022-02-07
