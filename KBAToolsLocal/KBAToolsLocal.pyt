@@ -24,18 +24,6 @@ importlib.reload(SingleSpeciesSelectionTool)
 importlib.reload(FullSpeciesScopingTool)
 
 
-# # Create a search cursor to filter the values to show only full species names
-# biotics_species = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
-#                                         "national_scientific_name",
-#                                         "ca_nname_level = 'Species'")
-
-
-# # Create a search cursor to filter the values to show only full species names
-# biotics_infraspecies = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
-#                                              "national_scientific_name",
-#                                              "ca_nname_level != 'Species'")
-
-
 # Define Toolbox
 class Toolbox(object):
     def __init__(self):

@@ -595,24 +595,4 @@ class Tool:
             arcpy.AddError(pymsg)
             arcpy.AddError(msgs)
 
-            # # Print Python error messages for use in Python / Python window
-            # print(pymsg)
-            # print(msgs)
-
-
-# # Controlling process [OLD]
-# if __name__ == '__main__':
-    # # Set sst to an instance of class Tool
-    # gst = Tool()
-    #
-    # # Hard-coded parameters for debugging
-    # param_table = arcpy.Parameter()
-    # param_sql = arcpy.Parameter()
-    #
-    # param_table.value = "BIOTICS_ELEMENT_NATIONAL"  # run local & server. User-friendly SQL statements.
-    # param_sql.value = "national_scientific_name = 'Acaulon muticum'"
-    #
-    # parameters = [param_table, param_sql]
-    #
-    # # Call the run_tool function using the input parameters (for the sst instance of class Tool)
-    # gst.run_tool(parameters, None)
+# End of script
