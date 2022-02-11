@@ -14,9 +14,8 @@
 import arcpy
 import sys
 import traceback
-import KBAFunctions
 import KBAExceptions
-
+# import KBAFunctions
 
 # class NoDataError(Exception):
 #     """Exception raised for NoDataError in the tool."""
@@ -59,11 +58,11 @@ class Tool:
     """These functions are called from within the run_tool function."""
 
     # Define a function to create the group layer for a selected record
-    def create_group_lyr(m, grp_lyr, sp_com_name, sp_sci_name, infra_exists, sp_level):
+    def create_species_group_lyr(m, grp_lyr, sp_com_name, sp_sci_name, infra_exists):
         # arcpy.AddMessage("Run create_group_lyr function.")
 
-        # Assign naming convention for output group layer in TOC based on infra & species level parameters:
-        if infra_exists is True and sp_level == "Species":
+        # Assign naming convention for output group layer in TOC based on infra_exists parameter:
+        if infra_exists is True:
             # Common Name (Scientific Name) data not identified to infraspecies
             grp_lyr_name = "{} ({}) data not identified to infraspecies".format(sp_com_name, sp_sci_name)
 
@@ -73,6 +72,25 @@ class Tool:
 
         # Add a copy of the SpeciesData group layer to the TOC (by referencing the .lyrx file written to scratch)
         m.addLayer(grp_lyr, "TOP")
+
+        # Rename the newly added group layer, because layer was added at top index reference = [0]
+        group_lyr = m.listLayers("SpeciesData")[0]
+        group_lyr.name = grp_lyr_name  # rename the group layer in TOC
+        group_lyr = m.listLayers(grp_lyr_name)[0]
+        group_lyr.visible = False  # Turn off the visibility for the group layer
+
+        return group_lyr
+
+    # Define a function to create the group layer for infraspecies records
+    def create_infraspecies_group_lyr(m, empty_grp_lyr, sp_com_name, sp_sci_name, species_grp_lyr):
+        # arcpy.AddMessage("Run create_group_lyr function.")
+
+        # Assign naming convention for output group layer in TOC
+        # Common Name (Scientific Name)
+        grp_lyr_name = "{} ({})".format(sp_com_name, sp_sci_name)
+
+        # Insert an empty copy of the SpeciesData group layer BELOW the full species group layer
+        m.insertLayer(species_grp_lyr, empty_grp_lyr, "AFTER")
 
         # Rename the newly added group layer, because layer was added at top index reference = [0]
         group_lyr = m.listLayers("SpeciesData")[0]
@@ -231,11 +249,10 @@ class Tool:
 
         # Variable from parameter defined in .pyt
         param_species = parameters[0].valueAsText
-        arcpy.AddMessage("Parameter: {0}".format(param_species))
+        arcpy.AddMessage("Species: {0}".format(param_species))
 
-        # SQL query based on the species parameter
+        # SQL query based on the input species parameter
         sql = "national_scientific_name = '{}'".format(param_species)
-        arcpy.AddMessage(sql)
 
         # Tables
         biotics_table = "BIOTICS_ELEMENT_NATIONAL"
@@ -380,27 +397,6 @@ class Tool:
             arcpy.AddMessage(u"\u200B")  # Unicode literal to create new line
             arcpy.AddMessage("Start Geoprocessing...")
 
-            # # Select the record in BIOTICS table based on the user-specified species
-            # biotics_record = arcpy.management.SelectLayerByAttribute(biotics_table,
-            #                                                          "NEW_SELECTION",
-            #                                                          sql)
-            #
-            # # Logic to check that only one record is selected in the initial query
-            # biotics_count = int(arcpy.GetCount_management(biotics_record).getOutput(0))
-            #
-            # # if count = 0, throw error using custom exception
-            # if biotics_count == 0:
-            #     arcpy.AddWarning("No record selected. Please select a record using the dropdown.")
-            #     raise KBAExceptions.BioticsError
-            #
-            # # if count > 1, throw error using custom exception
-            # elif biotics_count > 1:
-            #     arcpy.AddWarning("More than one record selected. Please select only one record.")
-            #     raise KBAExceptions.BioticsError
-            #
-            # else:
-            #     pass
-
             # Get record details from Biotics table using a search cursor for the selected record
             with arcpy.da.SearchCursor(biotics_table, biotics_fields, sql) as biotics_cursor:
                 for row in biotics_cursor:
@@ -421,16 +417,14 @@ class Tool:
             del row, biotics_cursor
 
             # # CHECK TO SEE IF THERE ARE RELATED RECORDS [INFRASPECIES] THAT NEED TO BE PROCESSED ...................
-            # # Assign variables related to the species table and the species id sql statement
-            # speciesid_sql = "speciesid = {}".format(speciesid)
+            """Use logic to select all infraspecies records for the full species by comparing and matching the 
+            element_code for the full species from Biotics table to the fullspecies_elementcode for the infraspecies
+            records in Species table."""
 
             # The initial selected record is full species & the tool will process all infraspecies [SEPARATE GROUPS]
             arcpy.AddMessage(u"\u200B")  # Unicode literal to create new line
             arcpy.AddMessage("Check to see if infraspecies exist...")
 
-            """Use logic to select all sub/infraspecies records for the full species by comparing and matching the 
-            element_code for the full species from Biotics table to the fullspecies_elementcode for the infraspecies
-            records in Species table."""
             # Select records from Species table where fullspecies_elementcode matches the element_code from Biotics
             species_records = arcpy.management.SelectLayerByAttribute(species_table,
                                                                       "NEW_SELECTION",
@@ -446,32 +440,26 @@ class Tool:
                     else:
                         pass
 
-            # arcpy.AddMessage(speciesid_list)
-
             del species_cursor, species_row  # delete some variables
 
-            # Check to see if there are values in the speciesid_list (i.e. infraspecies exist)
-            if not infraspeciesid_list:  # if speciesid_list is empty
-                # PROCESS FULL SPECIES
+            # Check to see if infraspecies exist by checking if there are values in the infraspeciesid_list
+            if not infraspeciesid_list:  # List is empty
                 arcpy.AddMessage("This species does not have infraspecies.")
                 infraspecies_exist = False
 
             else:
-                # PROCESS SPECIES WITH INFRASPECIES
-                arcpy.AddMessage("This species has {} infraspecies that need to be processed.".
-                                 format(str(len(infraspeciesid_list))))
+                arcpy.AddMessage("This species has {} infraspecies.".format(str(len(infraspeciesid_list))))
                 infraspecies_exist = True
 
             """ Process full species record to create the outputs in the Contents pane of the current map."""
 
             # # USE FUNCTIONS TO CREATE GROUP LAYER AND POINTS/LINES/EOS LAYERS [FOR FULL SPECIES] ...................
-            # Create the group layer by calling the create_group_lyr() function defined in the tool
-            species_group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name,
-                                                      infraspecies_exist, s_level)
-
-            # # Create the group layer by calling the create_group_lyr_scoping() function from the KBAFunctions file
-            # species_group_lyr = KBAFunctions.create_group_lyr_scoping(m, new_group_lyr, common_name, sci_name,
-            #                                                           infraspecies_exist, s_level)
+            # Create the group layer by calling the create_species_group_lyr() function defined in the tool
+            species_group_lyr = Tool.create_species_group_lyr(m,
+                                                              new_group_lyr,
+                                                              common_name,
+                                                              sci_name,
+                                                              infraspecies_exist)
 
             # Call the create_lyr() function x3 to create the point, lines & EO Layers
             Tool.create_lyr(m, species_group_lyr, speciesid, 'InputPoint')
@@ -480,7 +468,7 @@ class Tool:
 
             # # CREATE LISTS OF INPUT DATASET ID VALUES FOR RANGE MAPS AND CRITICAL HABITAT DATASETS ...............
 
-            # # GET LIST OF ECCC RANGE MAP DATASETS
+            # # GET LIST OF ECCC RANGE MAP DATASETS ----------------------------------------------------------------
             # Search cursor to get the InputDatasetID values from InputDataset table for records where
             # DatasetSourceID = 994 (i.e., DatasetSourceName = ECCC Range Maps)
             with arcpy.da.SearchCursor("InputDataset",
@@ -489,7 +477,7 @@ class Tool:
                 for inputdataset_record in inputdataset_cursor:
                     eccc_range_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
 
-            # # GET LIST OF IUCN RANGE MAP DATASETS
+            # # GET LIST OF IUCN RANGE MAP DATASETS ---------------------------------------------------------------
             # Search cursor to get the InputDatasetID values from InputDataset table for records where
             # DatasetSourceID = 996 (i.e., DatasetSourceName = IUCN Range Maps)
             with arcpy.da.SearchCursor("InputDataset",
@@ -498,7 +486,7 @@ class Tool:
                 for inputdataset_record in inputdataset_cursor:
                     iucn_range_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
 
-            # # GET LIST OF ECCC CRITICAL HABITAT DATASETS
+            # # GET LIST OF ECCC CRITICAL HABITAT DATASETS --------------------------------------------------------
             # Search cursor to get the InputDatasetID values from InputDataset table for records where
             # DatasetSourceID = 19 (i.e., DatasetSourceName = ECCC Critical Habitat)
             with arcpy.da.SearchCursor("InputDataset",
@@ -551,22 +539,18 @@ class Tool:
                         for row in infraspecies_biotics_cursor:
                             # Assign relevant variables from the biotics record
                             speciesid = row[0]
-                            s_level = row[2]
                             sci_name = row[3]
                             common_name = row[4]
 
-                            arcpy.AddMessage("Species ID: {}.".format(speciesid))
-                            arcpy.AddMessage("Scientific Name: {}".format(sci_name))
-                            # arcpy.AddMessage("Common Name: {}".format(common_name))
-                            # arcpy.AddMessage("Species Level: {}".format(s_level))
+                            arcpy.AddMessage("Species ID: {} ({}).".format(speciesid, sci_name))
 
-                            # # USE FUNCTIONS TO CREATE GROUP LAYER AND ALL POINTS/LINES/POLY/EOS LAYERS -------------
-                            # Create the group layer by calling the create_group_lyr() function
-                            infra_group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name,
-                                                                    infraspecies_exist, s_level)
-
-                            # # Move the infraspecies group layer below the species group layer
-                            # m.moveLayer(species_group_lyr, infra_group_lyr, "AFTER")
+                            # # USE FUNCTIONS TO CREATE OUTPUT LAYERS FOR INFRASPECIES ...........................
+                            # Create the infraspecies group layer using the create_infraspecies_group_lyr function
+                            infra_group_lyr = Tool.create_infraspecies_group_lyr(m,
+                                                                                 new_group_lyr,
+                                                                                 common_name,
+                                                                                 sci_name,
+                                                                                 species_group_lyr)
 
                             # Call the create_lyr() function x3 for points, lines & EOs
                             Tool.create_lyr(m, infra_group_lyr, speciesid, 'InputPoint')
