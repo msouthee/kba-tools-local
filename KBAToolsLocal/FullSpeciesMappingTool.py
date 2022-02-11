@@ -2,7 +2,7 @@
 # Script Name:      FullSpeciesMappingTool.py      "TOOL 1 - MAPPING TOOL FOR FULL SPECIES"
 #
 # Script Created:   2022-01-05
-# Last Updated:     2022-02-10
+# Last Updated:     2022-02-11
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
@@ -21,36 +21,7 @@
 import arcpy
 import sys
 import traceback
-
-
-class NoDataError(Exception):
-    """Exception raised for NoDataError in the tool."""
-    pass
-
-
-class NoTableError(Exception):
-    """Exception raised for NoDataError in the tool."""
-    pass
-
-
-class DefQueryError(Exception):
-    """Exception raised for DefQueryError in the tool."""
-    pass
-
-
-class SpeciesDataError(Exception):
-    """Exception raised for SpeciesDataError in the tool."""
-    pass
-
-
-class BioticsSQLError(Exception):
-    """Exception raised for BioticsSQLError in the tool."""
-    pass
-
-
-class SymbologyError(Exception):
-    """Exception raised for SymbologyError in the tool."""
-    pass
+import KBAExceptions
 
 
 # Define class called Tool
@@ -66,7 +37,7 @@ class Tool:
 
     # Define a function to create the group layer for a selected record (Function = reusable piece of code)
     def create_group_lyr(m, grp_lyr, sp_com_name, sp_sci_name, infra):
-        arcpy.AddMessage("Run create_group_lyr function.")
+        # arcpy.AddMessage("Run create_group_lyr function.")
 
         # Assign naming convention for output group layer in TOC based on infra parameter:
         if infra is True:
@@ -93,7 +64,7 @@ class Tool:
 
     # Define a function to create the InputPoint / InputLine / EO_Polygon layer for the species
     def create_lyr(m, grp_lyr, speciesid_tuple, ft_type, infra):
-        arcpy.AddMessage("Run create_lyr function for {}.".format(ft_type))
+        # arcpy.AddMessage("Run create_lyr function for {}.".format(ft_type))
 
         if len(m.listLayers(ft_type)) > 0:
             # Create a variable from the old/existing layer
@@ -146,11 +117,11 @@ class Tool:
             m.removeLayer(lyr)  # remove old layer
 
         else:
-            raise SpeciesDataError
+            raise KBAExceptions.SpeciesDataError
 
     # Define a function to create the InputPolygon layers for the species (w/out range & critical habitat data)
     def create_poly_lyr(m, grp_lyr, speciesid_tuple, range_data_list, infra):
-        arcpy.AddMessage("Run create_poly_lyr function for InputPolygon.")
+        # arcpy.AddMessage("Run create_poly_lyr function for InputPolygon.")
 
         if len(m.listLayers("InputPolygon")) > 0:
             lyr = m.listLayers("InputPolygon")[0]
@@ -201,11 +172,11 @@ class Tool:
             m.removeLayer(lyr)  # remove poly layer from the new species group
 
         else:
-            raise SpeciesDataError
+            raise KBAExceptions.SpeciesDataError
 
     # Define a function to create the ECCC range / IUCN range / ECCC critical habitat data layers for the species
     def create_range_lyr(m, grp_lyr, speciesid_tuple, range_type, range_data_list, infra):
-        arcpy.AddMessage("Run create_range_lyr function for {}.".format(range_type))
+        # arcpy.AddMessage("Run create_range_lyr function for {}.".format(range_type))
 
         # Check that the InputPolygon layer is loaded and that there are records in the range_data_list parameter
         if len(m.listLayers("InputPolygon")) > 0 and len(range_data_list) > 0:
@@ -268,28 +239,42 @@ class Tool:
                 pass  # Do nothing
 
         else:
-            raise SpeciesDataError
+            raise KBAExceptions.SpeciesDataError
 
     # Define a function to run the tool
     def run_tool(self, parameters, messages):
 
         # Make variables from parameter
         param_species = parameters[0].valueAsText
-        arcpy.AddMessage("Parameter: {0}".format(param_species))
+        arcpy.AddMessage("Species: {0}".format(param_species))
 
         # Create an sql query based on the species parameter
         sql = "national_scientific_name = '{}'".format(param_species)
-        arcpy.AddMessage(sql)
 
-        # List of biotics fields that you want to use in the search cursor
+        # Tables
+        biotics_table = "BIOTICS_ELEMENT_NATIONAL"
+        species_table = "Species (view only)"
+
+        # Fields in BIOTICS_ELEMENT_NATIONAL that are used in the search cursor
         biotics_fields = ["speciesid",
                           "element_code",
                           "ca_nname_level",
                           "national_scientific_name",
                           "national_engl_name"]
 
-        # List of InputDataset fields that you want to use in the search cursor
-        inputdataset_fields = ["inputdatasetid", "datasetsourceid"]
+        # Fields in InputDataset that are used in the search cursor
+        inputdataset_fields = ["inputdatasetid",
+                               "datasetsourceid"]
+
+        # Empty lists to hold data values generated for species and/or infraspecies
+        speciesid_list = []  # hold speciesid values for infraspecies
+        eccc_range_data_list = []  # hold inputdatasetid values for ECCC range maps
+        iucn_range_data_list = []  # hold inputdatasetid values for IUCN range maps
+        crit_habitat_data_list = []  # hold inputdatasetid values for ECCC critical habitat
+
+        # Datasets/tables that need to exist in the map and not have active definition query
+        dataset_list = ["InputPoint", "InputLine", "InputPolygon", "EO_Polygon"]
+        table_list = [biotics_table, "Species (view only)", "InputDataset"]
 
         try:
             # Current ArcPro Project
@@ -324,12 +309,9 @@ class Tool:
                 new_group_lyr = arcpy.mp.LayerFile(scratch + "\\species_group.lyrx")
 
             else:
-                raise SpeciesDataError
+                raise KBAExceptions.SpeciesDataError
 
             """Error handling to check for existence of required data layers in the current map."""
-            # Create a list of the datasets to check that they exist and don't have active definition query
-            dataset_list = ["InputPoint", "InputLine", "InputPolygon", "EO_Polygon"]
-
             # Iterate through the list of dataset names (layers)
             for dataset in dataset_list:
                 # Check to see if a dataset layer with that name exists in the map
@@ -347,7 +329,7 @@ class Tool:
                         if lyr.definitionQuery != '':
 
                             # Raise custom DefQueryError if there is a definition query
-                            raise DefQueryError
+                            raise KBAExceptions.DefQueryError
 
                         else:
                             # arcpy.AddMessage("No def query on {}.".format(dataset))
@@ -356,12 +338,9 @@ class Tool:
                         pass
                 else:
                     # Raise the custom NoDataError if the dataset doesn't exist. Pass the dataset name to the error.
-                    raise NoDataError
+                    raise KBAExceptions.NoDataError
 
             """ Error handling to check for existence of required data tables in the current map."""
-            # Create a list of the tables to check that they exist and don't have active definition query
-            table_list = ["BIOTICS_ELEMENT_NATIONAL", "Species (view only)", "InputDataset"]
-
             # Iterate through the list of table names (tables)
             for table in table_list:
                 # Error handling to ensure that the required tables exists in the map
@@ -375,14 +354,14 @@ class Tool:
                     if lyr.definitionQuery != '':
 
                         # Raise custom DefQueryError if there is a definition query
-                        raise DefQueryError
+                        raise KBAExceptions.DefQueryError
 
                     else:
                         # arcpy.AddMessage("No def query on {}.".format(table))
                         pass
 
                 else:
-                    raise NoTableError
+                    raise KBAExceptions.NoTableError
 
             """Error handling to check for existence of required symbology for new data layers.."""
             lyr = m.listLayers("InputPolygon")[0]
@@ -407,37 +386,13 @@ class Tool:
                     counter += 1  # increase the counter to move to the next item in the list
                     if counter == len(sym_list):  # you have reached the end of the list and not found the desired sym
                         condition = True
-                        raise SymbologyError
+                        raise KBAExceptions.SymbologyError
 
             # # END ERROR HANDLING .....................................................................................
 
             # # START DATA PROCESSING ..................................................................................
             arcpy.AddMessage(u"\u200B")  # Unicode literal to create new line
             arcpy.AddMessage("Start Geoprocessing...")
-
-            # Select the record in BIOTICS table based on the user-specified sql expression
-            biotics_record = arcpy.management.SelectLayerByAttribute("BIOTICS_ELEMENT_NATIONAL",
-                                                                     "NEW_SELECTION",
-                                                                     sql)
-
-            # Logic to check that only one record is selected in the initial query
-            biotics_count = int(arcpy.GetCount_management(biotics_record).getOutput(0))
-
-            # if count = 0, throw error using custom exception
-            if biotics_count == 0:
-                arcpy.AddWarning("No record selected. Please select a record using the SQL clause.")
-                raise BioticsSQLError
-
-            # if count > 1, throw error using custom exception
-            elif biotics_count > 1:
-                arcpy.AddWarning("More than one record selected. Please select only one record.")
-                raise BioticsSQLError
-
-            else:
-                pass
-
-            # Create empty speciesid_list - faster processing than using getCount object from arcpy
-            speciesid_list = []
 
             # Get record details from Biotics table using a search cursor for the selected record
             with arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL", biotics_fields, sql) as biotics_cursor:
@@ -458,30 +413,30 @@ class Tool:
             # Exit the search cursor, but keep the variables from inside the search cursor
             del row, biotics_cursor
 
-            # Append the speciesid value from the SQL statement to the speciesid_list
+            # Append the speciesid value from the user-selected full species to the speciesid_list
             speciesid_list.append(speciesid)
 
-            # # FIND ALL RELATED RECORDS THAT NEED TO BE PROCESSED .....................................................
-            # Assign variables related to the species table and the species id sql statement
-            speciesid_sql = "speciesid = {}".format(speciesid)
-            species_table = "Species (view only)"
+            # # # FIND ALL RELATED RECORDS THAT NEED TO BE PROCESSED ...................................................
+            # # Assign variables related to the species table and the species id sql statement
+            # speciesid_sql = "speciesid = {}".format(speciesid)
+            # species_table = "Species (view only)"
+            #
+            # # Select matching record from Species table for the initial full species record in Biotics
+            # species_records = arcpy.management.SelectLayerByAttribute(species_table,
+            #                                                           "NEW_SELECTION",
+            #                                                           speciesid_sql)
 
+            # # CHECK TO SEE IF THERE ARE RELATED RECORDS [INFRASPECIES] THAT NEED TO BE PROCESSED ...................
+            """Use logic to select all infraspecies records for the full species by comparing and matching the 
+            element_code for the full species from Biotics table to the fullspecies_elementcode for the infraspecies
+            records in Species table."""
             # The initial selected record is full species & the tool will process all infraspecies [GROUPED w/ SPECIES]
             arcpy.AddMessage(u"\u200B")  # Unicode literal to create new line
             arcpy.AddMessage("Check to see if infraspecies exist...")
 
-            # Select matching record from Species table for the initial full species record in Biotics
-            species_records = arcpy.management.SelectLayerByAttribute(species_table,
-                                                                      "NEW_SELECTION",
-                                                                      speciesid_sql)
-
-            """Use logic to select all sub/infraspecies records for the full species by comparing and matching the 
-            element_code for the full species from Biotics to the fullspecies_elementcode for the infraspecies
-            records in Species table."""
-
             # Select records from Species table where fullspecies_elementcode matches the element_code from Biotics
             species_records = arcpy.management.SelectLayerByAttribute(species_table,
-                                                                      "ADD_TO_SELECTION",
+                                                                      "NEW_SELECTION",
                                                                       "fullspecies_elementcode = '{}'"
                                                                       .format(element_code))
 
@@ -499,28 +454,29 @@ class Tool:
             """ This is where the processing happens to create the outputs in the Contents pane of the current map. 
             DIFFERENT LOGIC IS IMPLEMENTED BASED ON THE IF/ELSE STATEMENT."""
 
-            # arcpy.AddMessage(speciesid_list)
+            # Check to see if infraspecies exist by checking length of the speciesid_list
+            # If the list is only 1 record long, PROCESS FULL SPECIES ONLY
+            if len(speciesid_list) == 1:
+                arcpy.AddMessage("This species does not have infraspecies.")
+                infraspecies_exist = False
+
+            # Else if the list is longer than one record, PROCESS FULL SPECIES & INFRASPECIES
+            else:
+                infraspecies_count = len(speciesid_list) - 1
+                arcpy.AddMessage("This species has {} infraspecies.".format(str(infraspecies_count)))
+                infraspecies_exist = True
 
             # Convert the speciesid_list into a tuple (puts the values in round brackets(), not square brackets[])
             speciesid_tuple = tuple(speciesid_list)
             # arcpy.AddMessage(speciesid_tuple)
 
-            # # Print the length of the speciesid_list
-            # arcpy.AddMessage(len(speciesid_list))
-
-            # If the list is only 1 record long, PROCESS FULL SPECIES ONLY
-            if len(speciesid_list) == 1:
-                arcpy.AddMessage("No infraspecies exist.")
-                infraspecies_exist = False
-
-            # Else if the list is longer than one record, PROCESS FULL SPECIES & INFRASPECIES
-            else:
-                arcpy.AddMessage("Infraspecies exist.")
-                infraspecies_exist = True
-
-            # # USE FUNCTIONS TO CREATE GROUP LAYER AND POINTS/LINES/EOS LAYERS ....................................
+            # # USE FUNCTIONS TO CREATE GROUP LAYER AND POINTS/LINES/EOS LAYERS [FOR FULL SPECIES AND INFRASPECIES]..
             # Create the group layer by calling the create_group_lyr() function
-            group_lyr = Tool.create_group_lyr(m, new_group_lyr, common_name, sci_name, infraspecies_exist)
+            group_lyr = Tool.create_group_lyr(m,
+                                              new_group_lyr,
+                                              common_name,
+                                              sci_name,
+                                              infraspecies_exist)
 
             # Call the create_lyr() function x3 to create the point, lines & EO Layers
             Tool.create_lyr(m, group_lyr, speciesid_tuple, 'InputPoint', infraspecies_exist)
@@ -529,53 +485,32 @@ class Tool:
 
             # # CREATE LISTS OF INPUT DATASET ID VALUES FOR RANGE MAPS AND CRITICAL HABITAT DATASETS ...............
 
-            # # GET LIST OF ECCC RANGE MAP DATASETS
-            # Empty list to hold InputDatasetID values for records that correspond to ECCC Range Maps
-            eccc_range_data_list = []
-
-            # Search cursor to get the InputDatasetID values from InputDataset table
-            # for records that have DatasetSourceID = 994 (i.e., DatasetSourceName = ECCC Range Maps)
+            # # GET LIST OF ECCC RANGE MAP DATASETS ----------------------------------------------------------------
+            # Search cursor to get the InputDatasetID values from InputDataset table for records where
+            # DatasetSourceID = 994 (i.e., DatasetSourceName = ECCC Range Maps)
             with arcpy.da.SearchCursor("InputDataset",
                                        inputdataset_fields,
                                        "datasetsourceid = 994") as inputdataset_cursor:
-
-                # Iterate through the selected records in the InputDataset table
                 for inputdataset_record in inputdataset_cursor:
+                    eccc_range_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
 
-                    # Append InputDatasetID values to the specified range_data_list
-                    eccc_range_data_list.append(inputdataset_record[0])
-
-            # # GET LIST OF IUCN RANGE MAP DATASETS
-            # Empty list to hold InputDatasetID values for records that correspond to IUCN Range Maps
-            iucn_range_data_list = []
-
-            # Search cursor to get the InputDatasetID values from InputDataset table
-            # for records that have DatasetSourceID = 996 (i.e., DatasetSourceName = IUCN Range Maps)
+            # # GET LIST OF IUCN RANGE MAP DATASETS ---------------------------------------------------------------
+            # Search cursor to get the InputDatasetID values from InputDataset table for records where
+            # DatasetSourceID = 996 (i.e., DatasetSourceName = IUCN Range Maps)
             with arcpy.da.SearchCursor("InputDataset",
                                        inputdataset_fields,
                                        "datasetsourceid = 996") as inputdataset_cursor:
-
-                # Iterate through the selected records in the InputDataset table
                 for inputdataset_record in inputdataset_cursor:
+                    iucn_range_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
 
-                    # Append InputDatasetID values to the specified range_data_list
-                    iucn_range_data_list.append(inputdataset_record[0])
-
-            # # GET LIST OF ECCC CRITICAL HABITAT DATASETS
-            # Empty list to hold InputDatasetID values for records that correspond to ECCC Critical Habitat
-            crit_habitat_data_list = []
-
-            # Search cursor to get the InputDatasetID values from InputDataset table
-            # for records that have DatasetSourceID = 19 (i.e., DatasetSourceName = ECCC Critical Habitat)
+            # # GET LIST OF ECCC CRITICAL HABITAT DATASETS --------------------------------------------------------
+            # Search cursor to get the InputDatasetID values from InputDataset table for records where
+            # DatasetSourceID = 19 (i.e., DatasetSourceName = ECCC Critical Habitat)
             with arcpy.da.SearchCursor("InputDataset",
                                        inputdataset_fields,
                                        "datasetsourceid = 19") as inputdataset_cursor:
-
-                # Iterate through the selected records in the InputDataset table
                 for inputdataset_record in inputdataset_cursor:
-
-                    # Append InputDatasetID values to the specified range_data_list
-                    crit_habitat_data_list.append(inputdataset_record[0])
+                    crit_habitat_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
 
             del inputdataset_record, inputdataset_cursor
 
@@ -606,36 +541,27 @@ class Tool:
             arcpy.AddMessage("End of script.")
 
         # Error handling for custom error related to required data layers in the map
-        except NoDataError:
+        except KBAExceptions.NoDataError:
             arcpy.AddError("{} Layer does not exist. "
                            "Re-load {} from WCSC-KBA Map Template.".format(dataset, dataset))
 
         # Error handling for custom error related to required data tables in the map
-        except NoTableError:
+        except KBAExceptions.NoTableError:
             arcpy.AddError("{} Table does not exist. "
                            "Re-load {} from WCSC-KBA Map Template.".format(table, table))
 
         # Error handling for custom error related to active definition queries on required layers
-        except DefQueryError:
+        except KBAExceptions.DefQueryError:
             arcpy.AddError("{} has an active definition query. "
                            "Turn off all active definition queries on {} to run the tool.".format(lyr.name, lyr.name))
 
         # Error handling for custom error related to SpeciesData group layer not existing
-        except SpeciesDataError:
+        except KBAExceptions.SpeciesDataError:
             arcpy.AddError("SpeciesData (Group Layer) does not exist. "
                            "Re-load original SpeciesData from WCSC-KBA Map Template.")
 
-        # Error handling for custom input error related to the biotics SQL statement
-        except BioticsSQLError:
-            arcpy.AddError("Incorrect SQL statement. See Messages tab for more details.")
-
-        # # Error handling for custom input error related to the type of species selected
-        # except InfraspeciesError:
-        #     arcpy.AddError("You have selected an infraspecies in your SQL statement. "
-        #                    "This tool is ONLY for full species.")
-
         # Error handling if custom WCSC_KBA_Symbology isn't in the project
-        except SymbologyError:
+        except KBAExceptions.SymbologyError:
             arcpy.AddError("You need to add the WCSC_KBA_Symbology from Portal to the current Project.")
 
         # Error handling if an error occurs while using a Geoprocessing Tool in the script
