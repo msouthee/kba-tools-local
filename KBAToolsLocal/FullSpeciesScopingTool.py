@@ -8,6 +8,7 @@
 #
 # Purpose:          Add the output data layers (with valid data) to separate groups for full species and each
 #                   infraspecies.
+#                   Use different naming logic for the full species group layer depending on if infraspecies exist.
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Import libraries
@@ -49,7 +50,7 @@ import KBAExceptions
 
 # Define class called Tool
 class Tool:
-    """Select all points, lines and polygons for a specific species."""
+    """Create output layers in separate groups for full species and for infraspecies (if they exist)."""
 
     # Instantiate the class
     def __init__(self):
