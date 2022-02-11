@@ -22,36 +22,37 @@
 import arcpy
 import sys
 import traceback
+import KBAExceptions
 
 
-class NoDataError(Exception):
-    """Exception raised for NoDataError in the tool."""
-    pass
-
-
-class NoTableError(Exception):
-    """Exception raised for NoDataError in the tool."""
-    pass
-
-
-class DefQueryError(Exception):
-    """Exception raised for DefQueryError in the tool."""
-    pass
-
-
-class SpeciesDataError(Exception):
-    """Exception raised for SpeciesDataError in the tool."""
-    pass
-
-
-class BioticsSQLError(Exception):
-    """Exception raised for BioticsSQLError in the tool."""
-    pass
-
-
-class SymbologyError(Exception):
-    """Exception raised for SymbologyError in the tool."""
-    pass
+# class NoDataError(Exception):
+#     """Exception raised for NoDataError in the tool."""
+#     pass
+#
+#
+# class NoTableError(Exception):
+#     """Exception raised for NoDataError in the tool."""
+#     pass
+#
+#
+# class DefQueryError(Exception):
+#     """Exception raised for DefQueryError in the tool."""
+#     pass
+#
+#
+# class SpeciesDataError(Exception):
+#     """Exception raised for SpeciesDataError in the tool."""
+#     pass
+#
+#
+# class BioticsSQLError(Exception):
+#     """Exception raised for BioticsSQLError in the tool."""
+#     pass
+#
+#
+# class SymbologyError(Exception):
+#     """Exception raised for SymbologyError in the tool."""
+#     pass
 
 
 # Define class called Tool
@@ -131,7 +132,7 @@ class Tool:
             m.removeLayer(lyr)  # remove old layer
 
         else:
-            raise SpeciesDataError
+            raise KBAExceptions.SpeciesDataError
 
         # Define a function to create the InputPolygon layers for the species (w/out range & critical habitat data)
 
@@ -175,7 +176,7 @@ class Tool:
             m.removeLayer(lyr)  # remove poly layer from the new species group
 
         else:
-            raise SpeciesDataError
+            raise KBAExceptions.SpeciesDataError
 
         # Define a function to create the ECCC range / IUCN range / ECCC critical habitat data layers for the species
 
@@ -231,7 +232,7 @@ class Tool:
                 pass  # Do nothing
 
         else:
-            raise SpeciesDataError
+            raise KBAExceptions.SpeciesDataError
 
     # Define a function to run the tool
     def run_tool(self, parameters, messages):
@@ -287,7 +288,7 @@ class Tool:
                 new_group_lyr = arcpy.mp.LayerFile(scratch + "\\species_group.lyrx")
 
             else:
-                raise SpeciesDataError
+                raise KBAExceptions.SpeciesDataError
 
             """Error handling to check for existence of required data layers in the current map."""
             # Create a list of the datasets to check that they exist and don't have active definition query
@@ -310,7 +311,7 @@ class Tool:
                         if lyr.definitionQuery != '':
 
                             # Raise custom DefQueryError if there is a definition query
-                            raise DefQueryError
+                            raise KBAExceptions.DefQueryError
 
                         else:
                             # arcpy.AddMessage("No def query on {}.".format(dataset))
@@ -319,7 +320,7 @@ class Tool:
                         pass
                 else:
                     # Raise the custom NoDataError if the dataset doesn't exist. Pass the dataset name to the error.
-                    raise NoDataError
+                    raise KBAExceptions.NoDataError
 
             """ Error handling to check for existence of required data tables in the current map."""
             # Create a list of the tables to check that they exist and don't have active definition query
@@ -338,14 +339,14 @@ class Tool:
                     if lyr.definitionQuery != '':
 
                         # Raise custom DefQueryError if there is a definition query
-                        raise DefQueryError
+                        raise KBAExceptions.DefQueryError
 
                     else:
                         # arcpy.AddMessage("No def query on {}.".format(table))
                         pass
 
                 else:
-                    raise NoTableError
+                    raise KBAExceptions.NoTableError
 
             """Error handling to check for existence of required symbology for new data layers.."""
             lyr = m.listLayers("InputPolygon")[0]
@@ -370,7 +371,7 @@ class Tool:
                     counter += 1  # increase the counter to move to the next item in the list
                     if counter == len(sym_list):  # you have reached the end of the list and not found the desired sym
                         condition = True
-                        raise SymbologyError
+                        raise KBAExceptions.SymbologyError
 
             # # END ERROR HANDLING .....................................................................................
 
@@ -383,21 +384,21 @@ class Tool:
                                                                      "NEW_SELECTION",
                                                                      sql)
 
-            # Logic to check that only one record is selected in the initial query
-            biotics_count = int(arcpy.GetCount_management(biotics_record).getOutput(0))
-
-            # if count = 0, throw error using custom exception
-            if biotics_count == 0:
-                arcpy.AddWarning("No record selected. Please select a record using the SQL clause.")
-                raise BioticsSQLError
-
-            # if count > 1, throw error using custom exception
-            elif biotics_count > 1:
-                arcpy.AddWarning("More than one record selected. Please select only one record.")
-                raise BioticsSQLError
-
-            else:
-                pass
+            # # Logic to check that only one record is selected in the initial query
+            # biotics_count = int(arcpy.GetCount_management(biotics_record).getOutput(0))
+            #
+            # # if count = 0, throw error using custom exception
+            # if biotics_count == 0:
+            #     arcpy.AddWarning("No record selected. Please select a record using the dropdown.")
+            #     raise KBAExceptions.BioticsError
+            #
+            # # if count > 1, throw error using custom exception
+            # elif biotics_count > 1:
+            #     arcpy.AddWarning("More than one record selected. Please select only one record.")
+            #     raise KBAExceptions.BioticsError
+            #
+            # else:
+            #     pass
 
             # Get record details from Biotics table using a search cursor for the selected record
             with arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL", biotics_fields, sql) as biotics_cursor:
@@ -616,31 +617,31 @@ class Tool:
             arcpy.AddMessage("End of script.")
 
         # Error handling for custom error related to required data layers in the map
-        except NoDataError:
+        except KBAExceptions.NoDataError:
             arcpy.AddError("{} Layer does not exist. "
                            "Re-load {} from WCSC-KBA Map Template.".format(dataset, dataset))
 
         # Error handling for custom error related to required data tables in the map
-        except NoTableError:
+        except KBAExceptions.NoTableError:
             arcpy.AddError("{} Table does not exist. "
                            "Re-load {} from WCSC-KBA Map Template.".format(table, table))
 
         # Error handling for custom error related to active definition queries on required layers
-        except DefQueryError:
+        except KBAExceptions.DefQueryError:
             arcpy.AddError("{} has an active definition query. "
                            "Turn off all active definition queries on {} to run the tool.".format(lyr.name, lyr.name))
 
         # Error handling for custom error related to SpeciesData group layer not existing
-        except SpeciesDataError:
+        except KBAExceptions.SpeciesDataError:
             arcpy.AddError("SpeciesData (Group Layer) does not exist. "
                            "Re-load original SpeciesData from WCSC-KBA Map Template.")
 
-        # Error handling for custom input error related to the biotics SQL statement
-        except BioticsSQLError:
-            arcpy.AddError("Incorrect SQL statement. See Messages tab for more details.")
+        # # Error handling for custom input error related to the biotics dropdown list
+        # except KBAExceptions.BioticsError:
+        #     arcpy.AddError("No record selected.")
 
         # Error handling if custom WCSC_KBA_Symbology isn't in the project
-        except SymbologyError:
+        except KBAExceptions.SymbologyError:
             arcpy.AddError("You need to add the WCSC_KBA_Symbology from Portal to the current Project.")
 
         # Error handling if an error occurs while using a Geoprocessing Tool in the script
