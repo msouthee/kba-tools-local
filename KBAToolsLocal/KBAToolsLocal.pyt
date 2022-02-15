@@ -192,7 +192,7 @@ class ToolInfraspecies(object):
         # Create a search cursor to filter the values to show only full species names
         biotics_cursor = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
                                                "national_scientific_name",
-                                               "ca_nname_level != 'Species'")
+                                               "ca_nname_level <> 'Species'")
 
         # Set parameter filter to use a ValueList and populate the values from SearchCursor
         param_infraspecies.filter.type = "ValueList"
@@ -233,7 +233,7 @@ class ToolInfraspecies(object):
         # Create a search cursor to filter the values to show only full species names
         biotics_cursor = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
                                                "national_scientific_name",
-                                               "ca_nname_level != 'Species'")
+                                               "ca_nname_level <> 'Species'")
 
         # Set parameter filter to use a ValueList and populate the values from SearchCursor
         param_infraspecies.filter.type = "ValueList"
