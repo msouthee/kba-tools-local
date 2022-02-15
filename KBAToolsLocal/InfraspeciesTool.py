@@ -28,7 +28,7 @@ class Tool:
 
     """These functions are called from within the run_tool function."""
 
-    # Define a function to create the group layer for a selected record
+    # Define a function to create the group layer for the selected infraspecies record
     def create_infraspecies_group_lyr(m, grp_lyr, sp_com_name, sp_sci_name):
         # arcpy.AddMessage("Run create_group_lyr function.")
 
@@ -52,8 +52,8 @@ class Tool:
         # arcpy.AddMessage("Run create_group_lyr function.")
 
         # Assign naming convention for output group layer in TOC
-        # Common Name (Scientific Name)
-        grp_lyr_name = "{} ({})".format(sp_com_name, sp_sci_name)
+        # Common Name (Scientific Name) data not identified to infraspecies
+        grp_lyr_name = "{} ({}) data not identified to infraspecies".format(sp_com_name, sp_sci_name)
 
         # Insert an empty copy of the SpeciesData group layer BELOW the infraspecies group layer
         m.insertLayer(infraspecies_grp_lyr, empty_grp_lyr, "AFTER")
@@ -66,7 +66,7 @@ class Tool:
 
         return group_lyr
 
-    # Define a function to create the InputPoint / InputLine / EO_Polygon layer for the species
+    # Define a function to create the InputPoint / InputLine / EO_Polygon layers
     def create_lyr(m, grp_lyr, speciesid, ft_type):
         # arcpy.AddMessage("Run create_lyr function for {}.".format(ft_type))
 
@@ -110,7 +110,7 @@ class Tool:
         else:
             raise KBAExceptions.SpeciesDataError
 
-    # Define a function to create the InputPolygon layers for the species (w/out range & critical habitat data)
+    # Define a function to create the InputPolygon layers (w/out range & critical habitat data)
     def create_poly_lyr(m, grp_lyr, speciesid, range_data_list):
         # arcpy.AddMessage("Run create_poly_lyr function for InputPolygon.")
 
@@ -153,7 +153,7 @@ class Tool:
         else:
             raise KBAExceptions.SpeciesDataError
 
-    # Define a function to create the ECCC range / IUCN range / ECCC critical habitat data layers for the species
+    # Define a function to create the ECCC range / IUCN range / ECCC critical habitat data layers
     def create_range_lyr(m, grp_lyr, speciesid, range_type, range_data_list):
         # arcpy.AddMessage("Run create_range_lyr function for {}.".format(range_type))
 
@@ -238,14 +238,14 @@ class Tool:
         inputdataset_fields = ["inputdatasetid",
                                "datasetsourceid"]
 
-        # Empty lists to hold data values generated for critical habitat and range mapping layers
+        # Empty lists to hold data values
         eccc_range_data_list = []  # hold inputdatasetid values for ECCC range maps
         iucn_range_data_list = []  # hold inputdatasetid values for IUCN range maps
         crit_habitat_data_list = []  # hold inputdatasetid values for ECCC critical habitat
 
         # Datasets/tables that need to exist in the map and not have active definition query
         dataset_list = ["InputPoint", "InputLine", "InputPolygon", "EO_Polygon"]
-        table_list = [biotics_table, "Species (view only)", "InputDataset"]
+        table_list = [biotics_table, species_table, "InputDataset"]
 
         try:
             # Current ArcPro Project
@@ -451,11 +451,11 @@ class Tool:
                 m.removeLayer(primary_infraspecies_group_lyr)
                 arcpy.AddWarning("There is no spatial data for this species.")
 
-            # # CHECK TO SEE IF THE USER WANTS TO PROCESS THE FULL SPECIES AS WELL ...................
+            # # CHECK TO SEE IF THE USER WANTS TO PROCESS THE FULL SPECIES ..........................................
             if param_includefullspecies == "No":
                 pass  # Do nothing
 
-            else:  # Process full species in a separate group
+            else:
                 """Use logic to select the full species by getting the fullspecies_elementcode from the infraspecies 
                 record in Species table based on the speciesid."""
 
@@ -474,7 +474,8 @@ class Tool:
                         fullspecies_elementcode = infraspecies_row[0]
 
                 del infraspecies_cursor, infraspecies_row  # delete some variables
-                arcpy.AddMessage("FullSpecies_ElementCode: {}".format(fullspecies_elementcode))
+
+                # arcpy.AddMessage("FullSpecies_ElementCode: {}".format(fullspecies_elementcode))
 
                 """Create SQL query where the elementcode in Biotics (for the parent species) is equal to 
                 the fullspecies_elementcode in the Species table (from the infraspecies record)"""
@@ -493,31 +494,29 @@ class Tool:
                         sci_name = row[3]
                         common_name = row[4]
 
-                        arcpy.AddMessage("Species ID: {} ({}).".format(full_speciesid, sci_name))
+                arcpy.AddMessage("Species ID: {} ({}).".format(full_speciesid, sci_name))
 
-                        # # USE FUNCTIONS TO CREATE OUTPUT LAYERS FOR PARENT SPECIES ...........................
-                        # Create the species group layer using the create_optional_species_group_lyr function
-                        full_species_group_lyr = Tool.create_optional_species_group_lyr(m,
-                                                                                        new_group_lyr,
-                                                                                        common_name,
-                                                                                        sci_name,
-                                                                                        primary_infraspecies_group_lyr)
+                # # USE FUNCTIONS TO CREATE OUTPUT LAYERS FOR THE PARENT SPECIES ...........................
+                # Create the species group layer using the create_optional_species_group_lyr function
+                full_species_group_lyr = Tool.create_optional_species_group_lyr(m,
+                                                                                new_group_lyr,
+                                                                                common_name,
+                                                                                sci_name,
+                                                                                primary_infraspecies_group_lyr)
 
-                        # Call the create_lyr() function x3 for points, lines & EOs
-                        Tool.create_lyr(m, full_species_group_lyr, full_speciesid, 'InputPoint')
-                        Tool.create_lyr(m, full_species_group_lyr, full_speciesid, 'InputLine')
-                        Tool.create_lyr(m, full_species_group_lyr, full_speciesid, 'EO_Polygon')
+                # Call the create_lyr() function x3 for points, lines & EOs
+                Tool.create_lyr(m, full_species_group_lyr, full_speciesid, 'InputPoint')
+                Tool.create_lyr(m, full_species_group_lyr, full_speciesid, 'InputLine')
+                Tool.create_lyr(m, full_species_group_lyr, full_speciesid, 'EO_Polygon')
 
-                        # Call the function to create the InputPolygon layer w/out Range & Critical Habitat data
-                        Tool.create_poly_lyr(m, full_species_group_lyr, full_speciesid, range_and_crit_habitat_list)
+                # Call the function to create the InputPolygon layer w/out Range & Critical Habitat data
+                Tool.create_poly_lyr(m, full_species_group_lyr, full_speciesid, range_and_crit_habitat_list)
 
-                        # # Call the create_range_lyr() function x3 for range maps and critical habitat data
-                        Tool.create_range_lyr(m, full_species_group_lyr, full_speciesid, "ECCCRangeMaps",
-                                              eccc_range_data_list)
-                        Tool.create_range_lyr(m, full_species_group_lyr, full_speciesid, "IUCNRangeMaps",
-                                              iucn_range_data_list)
-                        Tool.create_range_lyr(m, full_species_group_lyr, full_speciesid, "ECCCCriticalHabitat",
-                                              crit_habitat_data_list)
+                # # Call the create_range_lyr() function x3 for range maps and critical habitat data
+                Tool.create_range_lyr(m, full_species_group_lyr, full_speciesid, "ECCCRangeMaps", eccc_range_data_list)
+                Tool.create_range_lyr(m, full_species_group_lyr, full_speciesid, "IUCNRangeMaps", iucn_range_data_list)
+                Tool.create_range_lyr(m, full_species_group_lyr, full_speciesid, "ECCCCriticalHabitat",
+                                      crit_habitat_data_list)
 
                 # Check to see if there are data layers in the full species group layer, if empty delete it
                 if len(full_species_group_lyr.listLayers()) > 0:
