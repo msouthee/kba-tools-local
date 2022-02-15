@@ -1,24 +1,27 @@
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------------------------------------------------
-# Script Name:      KBAToolsLocal_v1.pyt
+# Script Name:      KBAToolsLocal.pyt
 #
 # Script created:   2021-11-18
-# Last Updated:     2022-02-10
+# Last Updated:     2022-02-15
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
-# Purpose:          Python Toolbox to hold the KBAToolsLocal to be run by regional coordinators on local computers.
+# Purpose:          Python Toolbox to hold the LocalKBATools to be run by regional coordinators on local computers.
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Import libraries and modules
 import arcpy
 import FullSpeciesMappingTool
-import SingleSpeciesSelectionTool
+import FullSpeciesScopingTool
+import InfraspeciesTool
 
 # Reload your module in the Python toolbox
 import importlib
+
 importlib.reload(FullSpeciesMappingTool)
-importlib.reload(SingleSpeciesSelectionTool)
+importlib.reload(FullSpeciesScopingTool)
+importlib.reload(InfraspeciesTool)
 
 
 # Define Toolbox
@@ -30,20 +33,20 @@ class Toolbox(object):
 
         # List of tool classes associated with this toolbox
         self.tools = [ToolFullSpeciesMapping,
-                      ToolSingleSpeciesSelection]
+                      ToolFullSpeciesScoping,
+                      ToolInfraspecies]
 
 
-# Define Full Species Mapping Tool (Tool 1)
+# Define Full Species Mapping Tool
 class ToolFullSpeciesMapping(object):
     def __init__(self):
         """Define the Full Species Mapping Tool (Tool 1)."""
         self.label = "Mapping Tool for Species"
-        self.description = "Add data to the map grouped together for a species and all its infraspecies."
+        self.description = "Add data to the map in a single group for species and infraspecies."
         self.canRunInBackground = False
 
     def getParameterInfo(self):
         """Define parameter definitions."""
-
         param_species = arcpy.Parameter(
             displayName="Species Name:",
             name="speciesnamestring",
@@ -51,17 +54,16 @@ class ToolFullSpeciesMapping(object):
             parameterType="Required",
             direction="Input")
 
-        # Create a search cursor to filter the values based on the full species names
-        biotics_species = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
-                                                "national_scientific_name",
-                                                "ca_nname_level = 'Species'")
+        # Create a search cursor to filter the values to show only full species names
+        biotics_tool1 = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+                                              "national_scientific_name",
+                                              "ca_nname_level = 'Species'")
 
-        # Set a parameter filter to use a ValueList and populate the values from the biotics_species SearchCursor
+        # Set parameter filter to use a ValueList and populate the values from SearchCursor
         param_species.filter.type = "ValueList"
-        param_species.filter.list = sorted([row[0] for row in biotics_species])
+        param_species.filter.list = sorted([row[0] for row in biotics_tool1])
 
         params = [param_species]
-
         return params
 
     def isLicensed(self):
@@ -72,6 +74,21 @@ class ToolFullSpeciesMapping(object):
         """Modify the values and properties of parameters before internal
         validation is performed.  This method is called whenever a parameter
         has been changed."""
+        param_species = arcpy.Parameter(
+            displayName="Species Name:",
+            name="speciesnamestring",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+
+        # Create a search cursor to filter the values to show only full species names
+        biotics_tool1 = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+                                              "national_scientific_name",
+                                              "ca_nname_level = 'Species'")
+
+        param_species.filter.type = "ValueList"
+        param_species.filter.list = sorted([row[0] for row in biotics_tool1])
+
         return
 
     def updateMessages(self, parameters):
@@ -86,59 +103,33 @@ class ToolFullSpeciesMapping(object):
         return
 
 
-# Define Single Species Selection Tool
-class ToolSingleSpeciesSelection(object):
+# Define Full Species Scoping Tool
+class ToolFullSpeciesScoping(object):
     def __init__(self):
-        """Define the Single Species Selection Tool."""
-        self.label = "Data Exploration Tool (Species and/or Infraspecies)"
-        self.description = "Add data to the map separately for species and/or infraspecies."
+        """Define the Full Species Scoping Tool (Tool 3)."""
+        self.label = "Scoping Tool for Species"
+        self.description = "Add data to the map in separate group for species and infraspecies."
         self.canRunInBackground = False
 
     def getParameterInfo(self):
         """Define parameter definitions."""
+        param_species = arcpy.Parameter(
+            displayName="Species Name:",
+            name="speciesnamestring",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
 
-        # Table parameter. Because parameterType = Derived, this parameter will NOT show up in the Tool dialog window.
-        param_table = arcpy.Parameter(
-            displayName='Biotics Table',
-            name='biotics',
-            datatype='GPTableView',
-            parameterType='Derived',
-            direction='Input')
+        # Create a search cursor to filter the values based on the full species names
+        biotics_tool3 = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+                                              "national_scientific_name",
+                                              "ca_nname_level = 'Species'")
 
-        # Default table to populate in the tool.
-        param_table.value = "BIOTICS_ELEMENT_NATIONAL"  # run local & server. User-friendly SQL statements available
+        # Set parameter filter to use a ValueList and populate the values from SearchCursor
+        param_species.filter.type = "ValueList"
+        param_species.filter.list = sorted([row[0] for row in biotics_tool3])
 
-        # SQL parameter
-        param_sql = arcpy.Parameter(
-            displayName='ADD DATA TO THE MAP SEPARATELY FOR SPECIES AND INFRASPECIES'
-                        '\n\nIf you select a full species, all infraspecies will be processed by default'
-                        '\n\nSelect a species: ',
-            name='speciesname',
-            datatype='GPSQLExpression',
-            parameterType='Required',
-            direction='Input')
-
-        # Set the parameter dependency to create an sql expression based on the input table
-        param_sql.parameterDependencies = [param_table.name]
-
-        # Default sql query
-        param_sql.value = "national_scientific_name = 'Abronia latifolia'"
-
-        # Yes/No parameter
-        param_infraspecies = arcpy.Parameter(
-            displayName='If you selected an infraspecies, do you want to process the full species too?',
-            name='infraspecies',
-            datatype='GPString',
-            parameterType='Required',
-            direction='Input')
-
-        # Filter list of available responses
-        param_infraspecies.filter.list = ["Yes", "No"]
-
-        # Default selection
-        param_infraspecies.value = "Yes"
-
-        params = [param_table, param_sql, param_infraspecies]
+        params = [param_species]
         return params
 
     def isLicensed(self):
@@ -149,6 +140,21 @@ class ToolSingleSpeciesSelection(object):
         """Modify the values and properties of parameters before internal
         validation is performed.  This method is called whenever a parameter
         has been changed."""
+        param_species = arcpy.Parameter(
+            displayName="Species Name:",
+            name="speciesnamestring",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+
+        # Create a search cursor to filter the values based on the full species names
+        biotics_tool3 = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+                                              "national_scientific_name",
+                                              "ca_nname_level = 'Species'")
+
+        param_species.filter.type = "ValueList"
+        param_species.filter.list = sorted([row[0] for row in biotics_tool3])
+
         return
 
     def updateMessages(self, parameters):
@@ -158,8 +164,101 @@ class ToolSingleSpeciesSelection(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        sst = SingleSpeciesSelectionTool.Tool()
-        sst.run_tool(parameters, messages)
+        fsst = FullSpeciesScopingTool.Tool()
+        fsst.run_tool(parameters, messages)
+        return
+
+
+# Define Infraspecies Tool
+class ToolInfraspecies(object):
+    def __init__(self):
+        """Define the Infraspecies Tool."""
+        self.label = "Infraspecies Tool"
+        self.description = "Add data to the map in separate groups for infraspecies and its full species, " \
+                           "if the user wants to display the full species data too."
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        """Define parameter definitions."""
+        param_infraspecies = arcpy.Parameter(
+            displayName="Infraspecies Name:",
+            name="infraspeciesnamestring",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+
+        # Create a search cursor to filter the values to show only full species names
+        biotics_cursor = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+                                               "national_scientific_name",
+                                               "ca_nname_level <> 'Species'")
+
+        # Set parameter filter to use a ValueList and populate the values from SearchCursor
+        param_infraspecies.filter.type = "ValueList"
+        param_infraspecies.filter.list = sorted([row[0] for row in biotics_cursor])
+
+        # Yes/No parameter
+        param_includefullspecies = arcpy.Parameter(
+            displayName='Do you want to process the full species too?',
+            name='includefullspecies',
+            datatype='GPString',
+            parameterType='Required',
+            direction='Input')
+
+        # Filter list of available responses
+        param_includefullspecies.filter.list = ["Yes", "No"]
+
+        # Default selection
+        param_includefullspecies.value = "No"
+
+        params = [param_infraspecies, param_includefullspecies]
+        return params
+
+    def isLicensed(self):
+        """Set whether tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+        param_infraspecies = arcpy.Parameter(
+            displayName="Infraspecies Name:",
+            name="infraspeciesnamestring",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+
+        # Create a search cursor to filter the values to show only full species names
+        biotics_cursor = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+                                               "national_scientific_name",
+                                               "ca_nname_level <> 'Species'")
+
+        # Set parameter filter to use a ValueList and populate the values from SearchCursor
+        param_infraspecies.filter.type = "ValueList"
+        param_infraspecies.filter.list = sorted([row[0] for row in biotics_cursor])
+
+        # Yes/No parameter
+        param_includefullspecies = arcpy.Parameter(
+            displayName='Do you want to process the full species too?',
+            name='includefullspecies',
+            datatype='GPString',
+            parameterType='Required',
+            direction='Input')
+
+        # Filter list of available responses
+        param_includefullspecies.filter.list = ["Yes", "No"]
+
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter.  This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        it = InfraspeciesTool.Tool()
+        it.run_tool(parameters, messages)
         return
 
 
