@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------------------------------------------------
-# Script Name:      FullSpeciesScopingTool.py      "TOOL 3 - SCOPING TOOL FOR FULL SPECIES"
+# Script Name:      FullSpeciesScopingTool.py      "TOOL 3 - SCOPING TOOL FOR FULL SPECIES" [SEPARATE GROUP LAYERS]
 #
 # Script Created:   2022-02-10
 # Last Updated:     2022-02-11
