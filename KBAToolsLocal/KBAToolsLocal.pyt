@@ -40,8 +40,8 @@ class Toolbox(object):
 # Define Full Species Mapping Tool
 class ToolFullSpeciesMapping(object):
     def __init__(self):
-        """Define the Full Species Mapping Tool (Tool 1)."""
-        self.label = "Mapping Tool for Species"
+        """Define the Full Species Mapping Tool."""
+        self.label = "Species Mapping Tool"
         self.description = "Add data to the map in a single group for species and infraspecies."
         self.canRunInBackground = False
 
@@ -55,13 +55,13 @@ class ToolFullSpeciesMapping(object):
             direction="Input")
 
         # Create a search cursor to filter the values to show only full species names
-        biotics_tool1 = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
-                                              "national_scientific_name",
-                                              "ca_nname_level = 'Species'")
+        biotics_species_cursor = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+                                                       "national_scientific_name",
+                                                       "ca_nname_level = 'Species'")
 
         # Set parameter filter to use a ValueList and populate the values from SearchCursor
         param_species.filter.type = "ValueList"
-        param_species.filter.list = sorted([row[0] for row in biotics_tool1])
+        param_species.filter.list = sorted([row[0] for row in biotics_species_cursor])
 
         params = [param_species]
         return params
@@ -82,12 +82,12 @@ class ToolFullSpeciesMapping(object):
             direction="Input")
 
         # Create a search cursor to filter the values to show only full species names
-        biotics_tool1 = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
-                                              "national_scientific_name",
-                                              "ca_nname_level = 'Species'")
+        biotics_species_cursor = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+                                                       "national_scientific_name",
+                                                       "ca_nname_level = 'Species'")
 
         param_species.filter.type = "ValueList"
-        param_species.filter.list = sorted([row[0] for row in biotics_tool1])
+        param_species.filter.list = sorted([row[0] for row in biotics_species_cursor])
 
         return
 
@@ -106,8 +106,8 @@ class ToolFullSpeciesMapping(object):
 # Define Full Species Scoping Tool
 class ToolFullSpeciesScoping(object):
     def __init__(self):
-        """Define the Full Species Scoping Tool (Tool 3)."""
-        self.label = "Scoping Tool for Species"
+        """Define the Full Species Scoping Tool."""
+        self.label = "Species Scoping Tool"
         self.description = "Add data to the map in separate group for species and infraspecies."
         self.canRunInBackground = False
 
@@ -121,13 +121,13 @@ class ToolFullSpeciesScoping(object):
             direction="Input")
 
         # Create a search cursor to filter the values based on the full species names
-        biotics_tool3 = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
-                                              "national_scientific_name",
-                                              "ca_nname_level = 'Species'")
+        biotics_species_cursor = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+                                                      "national_scientific_name",
+                                                      "ca_nname_level = 'Species'")
 
         # Set parameter filter to use a ValueList and populate the values from SearchCursor
         param_species.filter.type = "ValueList"
-        param_species.filter.list = sorted([row[0] for row in biotics_tool3])
+        param_species.filter.list = sorted([row[0] for row in biotics_species_cursor])
 
         params = [param_species]
         return params
@@ -148,12 +148,12 @@ class ToolFullSpeciesScoping(object):
             direction="Input")
 
         # Create a search cursor to filter the values based on the full species names
-        biotics_tool3 = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
-                                              "national_scientific_name",
-                                              "ca_nname_level = 'Species'")
+        biotics_species_cursor = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+                                                       "national_scientific_name",
+                                                       "ca_nname_level = 'Species'")
 
         param_species.filter.type = "ValueList"
-        param_species.filter.list = sorted([row[0] for row in biotics_tool3])
+        param_species.filter.list = sorted([row[0] for row in biotics_species_cursor])
 
         return
 
@@ -188,13 +188,13 @@ class ToolInfraspecies(object):
             direction="Input")
 
         # Create a search cursor to filter the values to show only full species names
-        biotics_cursor = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
-                                               "national_scientific_name",
-                                               "ca_nname_level <> 'Species'")
+        biotics_infraspecies_cursor = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+                                                            "national_scientific_name",
+                                                            "ca_nname_level <> 'Species'")
 
         # Set parameter filter to use a ValueList and populate the values from SearchCursor
         param_infraspecies.filter.type = "ValueList"
-        param_infraspecies.filter.list = sorted([row[0] for row in biotics_cursor])
+        param_infraspecies.filter.list = sorted([row[0] for row in biotics_infraspecies_cursor])
 
         # Yes/No parameter
         param_includefullspecies = arcpy.Parameter(
@@ -229,13 +229,13 @@ class ToolInfraspecies(object):
             direction="Input")
 
         # Create a search cursor to filter the values to show only full species names
-        biotics_cursor = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
-                                               "national_scientific_name",
-                                               "ca_nname_level <> 'Species'")
+        biotics_infraspecies_cursor = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+                                                            "national_scientific_name",
+                                                            "ca_nname_level <> 'Species'")
 
         # Set parameter filter to use a ValueList and populate the values from SearchCursor
         param_infraspecies.filter.type = "ValueList"
-        param_infraspecies.filter.list = sorted([row[0] for row in biotics_cursor])
+        param_infraspecies.filter.list = sorted([row[0] for row in biotics_infraspecies_cursor])
 
         # Yes/No parameter
         param_includefullspecies = arcpy.Parameter(
