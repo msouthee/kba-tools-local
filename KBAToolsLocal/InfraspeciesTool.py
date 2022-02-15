@@ -1,14 +1,17 @@
 # ----------------------------------------------------------------------------------------------------------------------
-# Script Name:      InfraspeciesTool.py      "TOOL 2 - INFRASPECIES TOOL" [SEPARATE GROUP LAYERS]
+# Script Name:      InfraspeciesTool.py         "INFRASPECIES TOOL" [SEPARATE GROUP LAYERS]
 #
 # Script Created:   2022-02-15
 # Last Updated:     2022-02-15
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2022
 #
-# Purpose:          Add the output data layers (with valid data) to separate groups for infraspecies and full species,
-#                   if the user wants to add the full species to the map as well.
-#                   Use different naming logic for the infraspecies and full species group layers.
+# Purpose:          Adds output data layers to a map for the selected infraspecies, and adds a separate group layer for
+#                   the full (parent) species if the user wants to process the full species.
+#                   Uses different naming logic for the infraspecies and full species group layers.
+#                   Creates separate output data layers for each species ID value.
+#                   Contains logic to handle ECCC Range Maps, ECCC Critical Habitat & IUCN Range Maps separately from
+#                   other InputPolygon records.
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Import libraries

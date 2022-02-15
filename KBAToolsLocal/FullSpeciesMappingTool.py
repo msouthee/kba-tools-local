@@ -1,20 +1,18 @@
 # ----------------------------------------------------------------------------------------------------------------------
-# Script Name:      FullSpeciesMappingTool.py      "TOOL 1 - MAPPING TOOL FOR FULL SPECIES" [SINGLE GROUP LAYER]
+# Script Name:      FullSpeciesMappingTool.py      "MAPPING TOOL FOR FULL SPECIES" [SINGLE GROUP LAYER]
 #
 # Script Created:   2022-01-05
-# Last Updated:     2022-02-11
+# Last Updated:     2022-02-15
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
-# Purpose:          Create definition queries and add the output data layers (with valid data) under a species heading
-#                   into the TOC in the active map.
-#                   Process data for multiple associated species records using a LIKE statement.
+# Purpose:          Adds output data layers to a map in a single group for the full species and its infraspecies, when
+#                   infraspecies exist.
+#                   Uses different naming logic for the group layer and the individual data layers depending on if
+#                   infraspecies exist.
 #                   Creates output data that is grouped for multiple species ID values.
-#                   Contains logic to process full species and their subspecies.
 #                   Contains logic to handle ECCC Range Maps, ECCC Critical Habitat & IUCN Range Maps separately from
 #                   other InputPolygon records.
-#                   Added logic to create different output datasets depending on if the species does or does not
-#                   have infraspecies.
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Import libraries

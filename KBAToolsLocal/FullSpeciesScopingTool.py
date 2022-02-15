@@ -1,14 +1,16 @@
 # ----------------------------------------------------------------------------------------------------------------------
-# Script Name:      FullSpeciesScopingTool.py      "TOOL 3 - SCOPING TOOL FOR FULL SPECIES" [SEPARATE GROUP LAYERS]
+# Script Name:      FullSpeciesScopingTool.py      "SCOPING TOOL FOR FULL SPECIES" [SEPARATE GROUP LAYERS]
 #
 # Script Created:   2022-02-10
-# Last Updated:     2022-02-11
+# Last Updated:     2022-02-15
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2022
 #
-# Purpose:          Add the output data layers (with valid data) to separate groups for full species and each
-#                   infraspecies.
-#                   Use different naming logic for the full species group layer depending on if infraspecies exist.
+# Purpose:          Adds output data layers to a map in separate groups for the full species and each infraspecies.
+#                   Uses different naming logic for the full species group layer depending on if infraspecies exist.
+#                   Creates separate output data layers for each species ID value.
+#                   Contains logic to handle ECCC Range Maps, ECCC Critical Habitat & IUCN Range Maps separately from
+#                   other InputPolygon records.
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Import libraries
@@ -16,7 +18,6 @@ import arcpy
 import sys
 import traceback
 import KBAExceptions
-# import KBAFunctions
 
 
 # Define class called Tool
