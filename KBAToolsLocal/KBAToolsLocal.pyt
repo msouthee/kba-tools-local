@@ -210,7 +210,7 @@ class ToolInfraspecies(object):
         param_includefullspecies.filter.list = ["Yes", "No"]
 
         # Default selection
-        param_includefullspecies.value = "Yes"
+        param_includefullspecies.value = "No"
 
         params = [param_infraspecies, param_includefullspecies]
         return params
@@ -249,9 +249,6 @@ class ToolInfraspecies(object):
 
         # Filter list of available responses
         param_includefullspecies.filter.list = ["Yes", "No"]
-
-        # Default selection
-        param_includefullspecies.value = "Yes"
 
         return
 

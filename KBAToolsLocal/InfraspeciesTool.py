@@ -6,9 +6,9 @@
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2022
 #
-# Purpose:          Add the output data layers (with valid data) to separate groups for infraspecies and each
-#                   infraspecies.
-#                   Use different naming logic for the full species group layer depending on if infraspecies exist.
+# Purpose:          Add the output data layers (with valid data) to separate groups for infraspecies and full species,
+#                   if the user wants to add the full species to the map as well.
+#                   Use different naming logic for the infraspecies and full species group layers.
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Import libraries
@@ -16,12 +16,11 @@ import arcpy
 import sys
 import traceback
 import KBAExceptions
-# import KBAFunctions
 
 
 # Define class called Tool
 class Tool:
-    """Create output layers in separate groups for full species and for infraspecies (if they exist)."""
+    """Create output layers in separate groups for infraspecies and for full species (if the user wants to add them)."""
 
     # Instantiate the class
     def __init__(self):
@@ -30,17 +29,12 @@ class Tool:
     """These functions are called from within the run_tool function."""
 
     # Define a function to create the group layer for a selected record
-    def create_species_group_lyr(m, grp_lyr, sp_com_name, sp_sci_name, infra_exists):
+    def create_infraspecies_group_lyr(m, grp_lyr, sp_com_name, sp_sci_name):
         # arcpy.AddMessage("Run create_group_lyr function.")
 
-        # Assign naming convention for output group layer in TOC based on infra_exists parameter:
-        if infra_exists is True:
-            # Common Name (Scientific Name) data not identified to infraspecies
-            grp_lyr_name = "{} ({}) data not identified to infraspecies".format(sp_com_name, sp_sci_name)
-
-        else:
-            # Common Name (Scientific Name)
-            grp_lyr_name = "{} ({})".format(sp_com_name, sp_sci_name)
+        # Assign naming convention for output group layer
+        # Common Name (Scientific Name)
+        grp_lyr_name = "{} ({})".format(sp_com_name, sp_sci_name)
 
         # Add a copy of the SpeciesData group layer to the TOC (by referencing the .lyrx file written to scratch)
         m.addLayer(grp_lyr, "TOP")
@@ -53,16 +47,16 @@ class Tool:
 
         return group_lyr
 
-    # Define a function to create the group layer for infraspecies records
-    def create_infraspecies_group_lyr(m, empty_grp_lyr, sp_com_name, sp_sci_name, species_grp_lyr):
+    # Define a function to create the group layer for optional full species records
+    def create_optional_species_group_lyr(m, empty_grp_lyr, sp_com_name, sp_sci_name, infraspecies_grp_lyr):
         # arcpy.AddMessage("Run create_group_lyr function.")
 
         # Assign naming convention for output group layer in TOC
         # Common Name (Scientific Name)
         grp_lyr_name = "{} ({})".format(sp_com_name, sp_sci_name)
 
-        # Insert an empty copy of the SpeciesData group layer BELOW the full species group layer
-        m.insertLayer(species_grp_lyr, empty_grp_lyr, "AFTER")
+        # Insert an empty copy of the SpeciesData group layer BELOW the infraspecies group layer
+        m.insertLayer(infraspecies_grp_lyr, empty_grp_lyr, "AFTER")
 
         # Rename the newly added group layer, because layer was added at top index reference = [0]
         group_lyr = m.listLayers("SpeciesData")[0]
@@ -244,8 +238,7 @@ class Tool:
         inputdataset_fields = ["inputdatasetid",
                                "datasetsourceid"]
 
-        # Empty lists to hold data values generated for species and/or infraspecies
-        infraspeciesid_list = []  # hold speciesid values for infraspecies
+        # Empty lists to hold data values generated for critical habitat and range mapping layers
         eccc_range_data_list = []  # hold inputdatasetid values for ECCC range maps
         iucn_range_data_list = []  # hold inputdatasetid values for IUCN range maps
         crit_habitat_data_list = []  # hold inputdatasetid values for ECCC critical habitat
@@ -278,10 +271,10 @@ class Tool:
                 arcpy.AddMessage("SpeciesData group layer exists.")
 
                 # Get the existing SpeciesDate group layer as a layer object
-                species_group_lyr = m.listLayers("SpeciesData")[0]
+                primary_infraspecies_group_lyr = m.listLayers("SpeciesData")[0]
 
                 # Write a copy of the SpeciesData group layer to the user's scratch folder
-                arcpy.SaveToLayerFile_management(species_group_lyr, scratch + "\\species_group.lyrx")
+                arcpy.SaveToLayerFile_management(primary_infraspecies_group_lyr, scratch + "\\species_group.lyrx")
 
                 # Create a layer file from the scratch workspace
                 new_group_lyr = arcpy.mp.LayerFile(scratch + "\\species_group.lyrx")
@@ -372,7 +365,7 @@ class Tool:
             arcpy.AddMessage(u"\u200B")  # Unicode literal to create new line
             arcpy.AddMessage("Start Geoprocessing...")
 
-            # Get record details from Biotics table using a search cursor for the selected record
+            # Get record details from Biotics table using a search cursor for the selected infraspecies record
             with arcpy.da.SearchCursor(biotics_table, biotics_fields, sql) as biotics_cursor:
                 for row in biotics_cursor:
                     # Assign variables from the record based on the list order in biotics_fields variable
@@ -391,55 +384,19 @@ class Tool:
             # Exit the search cursor, but keep the variables from inside the search cursor
             del row, biotics_cursor
 
-            # # CHECK TO SEE IF THERE ARE RELATED RECORDS [INFRASPECIES] THAT NEED TO BE PROCESSED ...................
-            """Use logic to select all infraspecies records for the full species by comparing and matching the 
-            element_code for the full species from Biotics table to the fullspecies_elementcode for the infraspecies
-            records in Species table."""
+            """ Process infraspecies record to create the outputs in the Contents pane of the current map."""
 
-            # The initial selected record is full species & the tool will process all infraspecies [SEPARATE GROUPS]
-            arcpy.AddMessage(u"\u200B")  # Unicode literal to create new line
-            arcpy.AddMessage("Check to see if infraspecies exist...")
-
-            # Select records from Species table where fullspecies_elementcode matches the element_code from Biotics
-            species_records = arcpy.management.SelectLayerByAttribute(species_table,
-                                                                      "NEW_SELECTION",
-                                                                      "fullspecies_elementcode = '{}'"
-                                                                      .format(element_code))
-
-            # Iterate through the selected records and create a list of the infraspecies species ids
-            with arcpy.da.SearchCursor(species_records, ["speciesid"]) as species_cursor:
-                for species_row in species_cursor:
-                    # Only process new species id values for infraspecies
-                    if species_row[0] != speciesid:
-                        infraspeciesid_list.append(species_row[0])  # Append infraspecies id for the row to the list
-                    else:
-                        pass
-
-            del species_cursor, species_row  # delete some variables
-
-            # Check to see if infraspecies exist by checking if there are values in the infraspeciesid_list
-            if not infraspeciesid_list:  # List is empty
-                arcpy.AddMessage("This species does not have infraspecies.")
-                infraspecies_exist = False
-
-            else:
-                arcpy.AddMessage("This species has {} infraspecies.".format(str(len(infraspeciesid_list))))
-                infraspecies_exist = True
-
-            """ Process full species record to create the outputs in the Contents pane of the current map."""
-
-            # # USE FUNCTIONS TO CREATE GROUP LAYER AND POINTS/LINES/EOS LAYERS [FOR FULL SPECIES] ...................
-            # Create the group layer by calling the create_species_group_lyr() function defined in the tool
-            species_group_lyr = Tool.create_species_group_lyr(m,
-                                                              new_group_lyr,
-                                                              common_name,
-                                                              sci_name,
-                                                              infraspecies_exist)
+            # # USE FUNCTIONS TO CREATE GROUP LAYER AND POINTS/LINES/EOS LAYERS [FOR INFRASPECIES] ...................
+            # Create the group layer by calling the create_infraspecies_group_lyr() function defined in the tool
+            primary_infraspecies_group_lyr = Tool.create_infraspecies_group_lyr(m,
+                                                                                new_group_lyr,
+                                                                                common_name,
+                                                                                sci_name)
 
             # Call the create_lyr() function x3 to create the point, lines & EO Layers
-            Tool.create_lyr(m, species_group_lyr, speciesid, 'InputPoint')
-            Tool.create_lyr(m, species_group_lyr, speciesid, 'InputLine')
-            Tool.create_lyr(m, species_group_lyr, speciesid, 'EO_Polygon')
+            Tool.create_lyr(m, primary_infraspecies_group_lyr, speciesid, 'InputPoint')
+            Tool.create_lyr(m, primary_infraspecies_group_lyr, speciesid, 'InputLine')
+            Tool.create_lyr(m, primary_infraspecies_group_lyr, speciesid, 'EO_Polygon')
 
             # # CREATE LISTS OF INPUT DATASET ID VALUES FOR RANGE MAPS AND CRITICAL HABITAT DATASETS ...............
 
@@ -477,76 +434,97 @@ class Tool:
 
             # # CREATE OUTPUT LAYERS IN TOC FOR INPUTPOLYGONS, RANGE MAPS AND CRITICAL HABITAT DATASETS ............
             # Call the function to create the InputPolygon layer w/out Range / Critical Habitat data
-            Tool.create_poly_lyr(m, species_group_lyr, speciesid, range_and_crit_habitat_list)
+            Tool.create_poly_lyr(m, primary_infraspecies_group_lyr, speciesid, range_and_crit_habitat_list)
 
             # Call the create_range_lyr() function x3 to process the range maps and critical habitat data
-            Tool.create_range_lyr(m, species_group_lyr, speciesid, "ECCCRangeMaps", eccc_range_data_list)
-            Tool.create_range_lyr(m, species_group_lyr, speciesid, "IUCNRangeMaps", iucn_range_data_list)
-            Tool.create_range_lyr(m, species_group_lyr, speciesid, "ECCCCriticalHabitat", crit_habitat_data_list)
+            Tool.create_range_lyr(m, primary_infraspecies_group_lyr, speciesid, "ECCCRangeMaps",
+                                  eccc_range_data_list)
+            Tool.create_range_lyr(m, primary_infraspecies_group_lyr, speciesid, "IUCNRangeMaps",
+                                  iucn_range_data_list)
+            Tool.create_range_lyr(m, primary_infraspecies_group_lyr, speciesid, "ECCCCriticalHabitat",
+                                  crit_habitat_data_list)
 
-            # Check to see if there are data layers in the full species group layer, if empty delete it
-            if len(species_group_lyr.listLayers()) > 0:
+            # Check to see if there are data layers in the infrapecies group layer, if empty delete it
+            if len(primary_infraspecies_group_lyr.listLayers()) > 0:
                 pass
             else:
-                m.removeLayer(species_group_lyr)
+                m.removeLayer(primary_infraspecies_group_lyr)
                 arcpy.AddWarning("There is no spatial data for this species.")
 
-            """ Process infraspecies records (if they exist) to create the outputs in the Contents pane."""
-            if infraspecies_exist is False:
-                pass  # go to end of script
+            # # CHECK TO SEE IF THE USER WANTS TO PROCESS THE FULL SPECIES AS WELL ...................
+            if param_includefullspecies == "No":
+                pass  # Do nothing
 
-            # Process infraspecies
-            else:
+            else:  # Process full species in a separate group
+                """Use logic to select the full species by getting the fullspecies_elementcode from the infraspecies 
+                record in Species table based on the speciesid."""
+
                 arcpy.AddMessage(u"\u200B")  # Unicode literal to create new line
-                arcpy.AddMessage("Processing infraspecies...")
+                arcpy.AddMessage("Processing full species for this infraspecies...")
 
-                # Iterate through the list of infraspecies speciesid values
-                for s_id in infraspeciesid_list:
+                # Select the infraspecies record in the Species table
+                infraspecies_record = arcpy.management.SelectLayerByAttribute(species_table,
+                                                                              "NEW_SELECTION",
+                                                                              "speciesid = {}".format(speciesid))
 
-                    # Assign sql query variable related to the current species id in the list
-                    biotics_sql = "speciesid = {}".format(s_id)
+                # Use a search cursor to get the fullspecies_elementcode from the Species table fro the infraspecies
+                with arcpy.da.SearchCursor(infraspecies_record, ["fullspecies_elementcode"]) as infraspecies_cursor:
+                    for infraspecies_row in infraspecies_cursor:
+                        # Get the fullspecies_elementcode for the parent species from the selected infraspecies record
+                        fullspecies_elementcode = infraspecies_row[0]
 
-                    # Select the infraspecies record in Biotics that you want to process
-                    arcpy.SelectLayerByAttribute_management(biotics_table, "NEW_SELECTION", biotics_sql)
+                del infraspecies_cursor, infraspecies_row  # delete some variables
+                arcpy.AddMessage("FullSpecies_ElementCode: {}".format(fullspecies_elementcode))
 
-                    # Query the record in Biotics to get species information using a search cursor
-                    with arcpy.da.SearchCursor(biotics_table, biotics_fields) as infraspecies_biotics_cursor:
-                        for row in infraspecies_biotics_cursor:
-                            # Assign relevant variables from the biotics record
-                            speciesid = row[0]
-                            sci_name = row[3]
-                            common_name = row[4]
+                """Create SQL query where the elementcode in Biotics (for the parent species) is equal to 
+                the fullspecies_elementcode in the Species table (from the infraspecies record)"""
 
-                            arcpy.AddMessage("Species ID: {} ({}).".format(speciesid, sci_name))
+                # SQL query to get full species record in Biotics
+                biotics_sql = "element_code = '{}'".format(fullspecies_elementcode)
 
-                            # # USE FUNCTIONS TO CREATE OUTPUT LAYERS FOR INFRASPECIES ...........................
-                            # Create the infraspecies group layer using the create_infraspecies_group_lyr function
-                            infra_group_lyr = Tool.create_infraspecies_group_lyr(m,
-                                                                                 new_group_lyr,
-                                                                                 common_name,
-                                                                                 sci_name,
-                                                                                 species_group_lyr)
+                # Select the full species record in Biotics that is related to the infraspecies
+                arcpy.SelectLayerByAttribute_management(biotics_table, "NEW_SELECTION", biotics_sql)
 
-                            # Call the create_lyr() function x3 for points, lines & EOs
-                            Tool.create_lyr(m, infra_group_lyr, speciesid, 'InputPoint')
-                            Tool.create_lyr(m, infra_group_lyr, speciesid, 'InputLine')
-                            Tool.create_lyr(m, infra_group_lyr, speciesid, 'EO_Polygon')
+                # Query the record in Biotics to get species information using a search cursor
+                with arcpy.da.SearchCursor(biotics_table, biotics_fields) as biotics_full_species_cursor:
+                    for row in biotics_full_species_cursor:
+                        # Assign relevant variables from the biotics record
+                        full_speciesid = row[0]
+                        sci_name = row[3]
+                        common_name = row[4]
 
-                            # Call the function to create the InputPolygon layer w/out Range & Critical Habitat data
-                            Tool.create_poly_lyr(m, infra_group_lyr, speciesid, range_and_crit_habitat_list)
+                        arcpy.AddMessage("Species ID: {} ({}).".format(full_speciesid, sci_name))
 
-                            # # Call the create_range_lyr() function x3 for range maps and critical habitat data
-                            Tool.create_range_lyr(m, infra_group_lyr, speciesid, "ECCCRangeMaps", eccc_range_data_list)
-                            Tool.create_range_lyr(m, infra_group_lyr, speciesid, "IUCNRangeMaps", iucn_range_data_list)
-                            Tool.create_range_lyr(m, infra_group_lyr, speciesid, "ECCCCriticalHabitat",
-                                                  crit_habitat_data_list)
+                        # # USE FUNCTIONS TO CREATE OUTPUT LAYERS FOR PARENT SPECIES ...........................
+                        # Create the species group layer using the create_optional_species_group_lyr function
+                        full_species_group_lyr = Tool.create_optional_species_group_lyr(m,
+                                                                                        new_group_lyr,
+                                                                                        common_name,
+                                                                                        sci_name,
+                                                                                        primary_infraspecies_group_lyr)
 
-                    # Check to see if there are data layers in the infraspecies group layer, if empty delete it
-                    if len(infra_group_lyr.listLayers()) > 0:
-                        pass
-                    else:
-                        m.removeLayer(infra_group_lyr)
-                        arcpy.AddWarning("There is no spatial data for infraspecies {}.".format(sci_name))
+                        # Call the create_lyr() function x3 for points, lines & EOs
+                        Tool.create_lyr(m, full_species_group_lyr, full_speciesid, 'InputPoint')
+                        Tool.create_lyr(m, full_species_group_lyr, full_speciesid, 'InputLine')
+                        Tool.create_lyr(m, full_species_group_lyr, full_speciesid, 'EO_Polygon')
+
+                        # Call the function to create the InputPolygon layer w/out Range & Critical Habitat data
+                        Tool.create_poly_lyr(m, full_species_group_lyr, full_speciesid, range_and_crit_habitat_list)
+
+                        # # Call the create_range_lyr() function x3 for range maps and critical habitat data
+                        Tool.create_range_lyr(m, full_species_group_lyr, full_speciesid, "ECCCRangeMaps",
+                                              eccc_range_data_list)
+                        Tool.create_range_lyr(m, full_species_group_lyr, full_speciesid, "IUCNRangeMaps",
+                                              iucn_range_data_list)
+                        Tool.create_range_lyr(m, full_species_group_lyr, full_speciesid, "ECCCCriticalHabitat",
+                                              crit_habitat_data_list)
+
+                # Check to see if there are data layers in the full species group layer, if empty delete it
+                if len(full_species_group_lyr.listLayers()) > 0:
+                    pass
+                else:
+                    m.removeLayer(full_species_group_lyr)
+                    arcpy.AddWarning("There is no spatial data for parent species {}.".format(sci_name))
 
             m.clearSelection()  # clear all selections
 
@@ -579,7 +557,7 @@ class Tool:
         # Error handling if an error occurs while using a Geoprocessing Tool in the script
         except arcpy.ExecuteError:
             # If the script crashes, remove the group layer
-            m.removeLayer(species_group_lyr)
+            m.removeLayer(primary_infraspecies_group_lyr)
 
             # Get the tool error messages
             msgs = arcpy.GetMessages(2)
@@ -593,7 +571,7 @@ class Tool:
         # Error handling if the script fails for other unexplained reasons
         except:
             # If the script crashes, remove the group layer
-            m.removeLayer(species_group_lyr)
+            m.removeLayer(primary_infraspecies_group_lyr)
 
             # Get the traceback object
             tb = sys.exc_info()[2]
