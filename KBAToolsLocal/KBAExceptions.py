@@ -1,3 +1,5 @@
+# ----------------------------------------------------------------------------------------------------------------------
+# Script Name:      KBAExceptions.py
 
 class NoDataError(Exception):
     """Exception raised for NoDataError in the tool."""
