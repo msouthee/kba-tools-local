@@ -90,7 +90,7 @@ class ToolFullSpeciesMapping(object):
             displayName="Use French species name?",
             name="french_name",
             datatype="GPBoolean",
-            parameterType="Required",
+            parameterType="Optional",
             direction="Input")
 
         params = [param_species,
@@ -185,7 +185,7 @@ class ToolFullSpeciesScoping(object):
             displayName="Use French species name?",
             name="french_name",
             datatype="GPBoolean",
-            parameterType="Required",
+            parameterType="Optional",
             direction="Input")
 
         params = [param_species,
@@ -297,14 +297,14 @@ class ToolInfraspecies(object):
             displayName='Do you want to process the full species too?',
             name='includefullspecies',
             datatype='GPBoolean',
-            parameterType='Required',
+            parameterType='Optional',
             direction='Input')
 
         param_french_names = arcpy.Parameter(
             displayName="Use French species name?",
             name="french_name",
             datatype="GPBoolean",
-            parameterType="Required",
+            parameterType="Optional",
             direction="Input")
 
         params = [param_infraspecies,

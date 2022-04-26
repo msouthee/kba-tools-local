@@ -221,12 +221,12 @@ class Tool:
         param_infraspecies = parameters[0].valueAsText
         arcpy.AddMessage("Species: {}".format(param_infraspecies))
 
-        # This is a boolean parameter, if the box is checked then the value is true
-        param_includefullspecies = parameters[1].valueAsText
+        # This is a boolean parameter, if the box is checked then the value is True
+        param_includefullspecies = parameters[1].value
         arcpy.AddMessage("Include full species: {}".format(param_includefullspecies))
 
-        # This is a boolean parameter, if the box is checked then the value is true
-        param_french_name = parameters[2].valueAsText
+        # This is a boolean parameter, if the box is checked then the value is True
+        param_french_name = parameters[2].value
         arcpy.AddMessage("Use French Name: {}".format(param_french_name))
 
         # SQL query based on the input species parameter
@@ -241,7 +241,8 @@ class Tool:
                           "element_code",
                           "ca_nname_level",
                           "national_scientific_name",
-                          "national_engl_name"]
+                          "national_engl_name",
+                          "national_fr_name"]  # Added french species names
 
         # Fields in InputDataset that are used in the search cursor
         inputdataset_fields = ["inputdatasetid",
@@ -382,13 +383,24 @@ class Tool:
                     element_code = row[1]
                     s_level = row[2]
                     sci_name = row[3]
-                    common_name = row[4]
+                    en_name = row[4]
+                    fr_name = row[5]
 
                     arcpy.AddMessage("Species ID: {}".format(speciesid))
                     arcpy.AddMessage("Scientific Name: {}".format(sci_name))
-                    arcpy.AddMessage("Common Name: {}".format(common_name))
+                    arcpy.AddMessage("English Name: {}".format(en_name))
+                    arcpy.AddMessage("French Name: {}".format(fr_name))
                     arcpy.AddMessage("Species Level: {}".format(s_level))
                     arcpy.AddMessage("Element Code: {}".format(element_code))
+
+            # Check if french name exists, if null then use english name
+            if not fr_name:
+                arcpy.AddMessage("There is no french name for this species. Revert to using english name.")
+                # Set the french name parameter to False
+                param_french_name = False
+
+            else:
+                pass
 
             # Exit the search cursor, but keep the variables from inside the search cursor
             del row, biotics_cursor
@@ -399,7 +411,7 @@ class Tool:
             # Create the group layer by calling the create_infraspecies_group_lyr() function defined in the tool
             primary_infraspecies_group_lyr = Tool.create_infraspecies_group_lyr(m,
                                                                                 new_group_lyr,
-                                                                                common_name,
+                                                                                en_name,
                                                                                 sci_name)
 
             # Call the create_lyr() function x3 to create the point, lines & EO Layers
@@ -502,7 +514,7 @@ class Tool:
                         # Assign relevant variables from the biotics record
                         full_speciesid = row[0]
                         sci_name = row[3]
-                        common_name = row[4]
+                        en_name = row[4]
 
                 arcpy.AddMessage("Species ID: {} ({}).".format(full_speciesid, sci_name))
 
@@ -510,7 +522,7 @@ class Tool:
                 # Create the species group layer using the create_optional_species_group_lyr function
                 full_species_group_lyr = Tool.create_optional_species_group_lyr(m,
                                                                                 new_group_lyr,
-                                                                                common_name,
+                                                                                en_name,
                                                                                 sci_name,
                                                                                 primary_infraspecies_group_lyr)
 

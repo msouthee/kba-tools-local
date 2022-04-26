@@ -251,8 +251,8 @@ class Tool:
         param_species = parameters[0].valueAsText
         arcpy.AddMessage("Species: {}".format(param_species))
 
-        # This is a boolean parameter, if the box is checked then the value is true
-        param_french_name = parameters[1].valueAsText
+        # This is a boolean parameter, if the box is checked then the value is True
+        param_french_name = parameters[1].value
         arcpy.AddMessage("Use French Name: {}".format(param_french_name))
 
         # Create an sql query based on the species parameter
@@ -420,14 +420,14 @@ class Tool:
                     arcpy.AddMessage("Species Level: {}".format(s_level))
                     arcpy.AddMessage("Element Code: {}".format(element_code))
 
-            # Check if french name exists, if null then use english name
-            if not fr_name:
+            # Check if french name exists, if None then use english name
+            if param_french_name and not fr_name:
                 arcpy.AddMessage("There is no french name for this species. Revert to using english name.")
                 # Set the french name parameter to False
                 param_french_name = False
 
             else:
-                arcpy.AddMessage("Using french species name.")
+                pass
 
             # Exit the search cursor, but keep the variables from inside the search cursor
             del row, biotics_cursor
@@ -486,18 +486,16 @@ class Tool:
             # Create the group layer by calling the create_group_lyr() function
             # Use french or english name depending on parameters
 
-            # if the parameter to use french names is true
+            # if the parameter to use french names is still true, use french name
             if param_french_name:
-                # use french name
                 group_lyr = Tool.create_group_lyr(m,
                                                   new_group_lyr,
                                                   fr_name,
                                                   sci_name,
                                                   infraspecies_exist)
 
-            # if the parameter to use french names is false
+            # if the parameter to use french names is false, use english name
             else:
-                # use english name
                 group_lyr = Tool.create_group_lyr(m,
                                                   new_group_lyr,
                                                   en_name,
