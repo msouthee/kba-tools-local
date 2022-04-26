@@ -216,12 +216,18 @@ class Tool:
 
         # # SET VARIABLES FOR THE SCRIPT ...............................................................................
 
-        # Variable from parameter defined in .pyt
+        # Make variables from input parameters defined in .pyt
+        # Input infraspecies from filtered list in dropdown menu in tool dialog
         param_infraspecies = parameters[0].valueAsText
-        arcpy.AddMessage("Species: {0}".format(param_infraspecies))
+        arcpy.AddMessage("Species: {}".format(param_infraspecies))
 
+        # This is a boolean parameter, if the box is checked then the value is true
         param_includefullspecies = parameters[1].valueAsText
         arcpy.AddMessage("Include full species: {}".format(param_includefullspecies))
+
+        # This is a boolean parameter, if the box is checked then the value is true
+        param_french_name = parameters[2].valueAsText
+        arcpy.AddMessage("Use French Name: {}".format(param_french_name))
 
         # SQL query based on the input species parameter
         sql = "national_scientific_name = '{}'".format(param_infraspecies)
@@ -455,7 +461,8 @@ class Tool:
                 arcpy.AddWarning("There is no spatial data for this species.")
 
             # # CHECK TO SEE IF THE USER WANTS TO PROCESS THE FULL SPECIES ..........................................
-            if param_includefullspecies == "No":
+            # if param_includefullspecies = false
+            if not param_includefullspecies:
                 pass  # Do nothing
 
             else:

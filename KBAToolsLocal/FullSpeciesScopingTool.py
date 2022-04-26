@@ -220,9 +220,14 @@ class Tool:
 
         # # SET VARIABLES FOR THE SCRIPT ...............................................................................
 
-        # Variable from parameter defined in .pyt
+        # Make variables from input parameters defined in .pyt
+        # Input species from filtered list in dropdown menu in tool dialog
         param_species = parameters[0].valueAsText
-        arcpy.AddMessage("Species: {0}".format(param_species))
+        arcpy.AddMessage("Species: {}".format(param_species))
+
+        # This is a boolean parameter, if the box is checked then the value is true
+        param_french_name = parameters[1].valueAsText
+        arcpy.AddMessage("Use French Name: {}".format(param_french_name))
 
         # SQL query based on the input species parameter
         sql = "national_scientific_name = '{}'".format(param_species)

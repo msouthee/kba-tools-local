@@ -3,11 +3,14 @@
 # Script Name:      KBAToolsLocal.pyt
 #
 # Script created:   2021-11-18
-# Last Updated:     2022-02-15
+# Last Updated:     2022-04-26
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
 # Purpose:          Python Toolbox to hold the LocalKBATools to be run by regional coordinators on local computers.
+#
+# Updates:          Add parameters to handle french species names.
+#
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Import libraries and modules
@@ -74,13 +77,6 @@ class ToolFullSpeciesMapping(object):
             parameterType="Required",
             direction="Input")
 
-        param_french_names = arcpy.Parameter(
-            displayName="Use French species name?",
-            name="french_name",
-            datatype="GPBoolean",
-            parameterType="Required",
-            direction="Input")
-
         # Create a search cursor to filter the values to show only full species names
         biotics_species_cursor = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
                                                        "national_scientific_name",
@@ -90,7 +86,16 @@ class ToolFullSpeciesMapping(object):
         param_species.filter.type = "ValueList"
         param_species.filter.list = sorted([row[0] for row in biotics_species_cursor])
 
-        params = [param_species, param_french_names]
+        param_french_names = arcpy.Parameter(
+            displayName="Use French species name?",
+            name="french_name",
+            datatype="GPBoolean",
+            parameterType="Required",
+            direction="Input")
+
+        params = [param_species,
+                  param_french_names]
+
         return params
 
     def isLicensed(self):
@@ -139,6 +144,26 @@ class ToolFullSpeciesScoping(object):
         self.canRunInBackground = False
 
     def getParameterInfo(self):
+        # """Define parameter definitions."""
+        # param_species = arcpy.Parameter(
+        #     displayName="Species Name:",
+        #     name="speciesnamestring",
+        #     datatype="GPString",
+        #     parameterType="Required",
+        #     direction="Input")
+        #
+        # # Create a search cursor to filter the values based on the full species names
+        # biotics_species_cursor = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+        #                                               "national_scientific_name",
+        #                                               "ca_nname_level = 'Species'")
+        #
+        # # Set parameter filter to use a ValueList and populate the values from SearchCursor
+        # param_species.filter.type = "ValueList"
+        # param_species.filter.list = sorted([row[0] for row in biotics_species_cursor])
+        #
+        # params = [param_species]
+        # return params
+
         """Define parameter definitions."""
         param_species = arcpy.Parameter(
             displayName="Species Name:",
@@ -156,7 +181,16 @@ class ToolFullSpeciesScoping(object):
         param_species.filter.type = "ValueList"
         param_species.filter.list = sorted([row[0] for row in biotics_species_cursor])
 
-        params = [param_species]
+        param_french_names = arcpy.Parameter(
+            displayName="Use French species name?",
+            name="french_name",
+            datatype="GPBoolean",
+            parameterType="Required",
+            direction="Input")
+
+        params = [param_species,
+                  param_french_names]
+
         return params
 
     def isLicensed(self):
@@ -206,6 +240,41 @@ class ToolInfraspecies(object):
         self.canRunInBackground = False
 
     def getParameterInfo(self):
+        # """Define parameter definitions."""
+        # param_infraspecies = arcpy.Parameter(
+        #     displayName="Infraspecies Name:",
+        #     name="infraspeciesnamestring",
+        #     datatype="GPString",
+        #     parameterType="Required",
+        #     direction="Input")
+        #
+        # # Create a search cursor to filter the values to show only full species names
+        # biotics_infraspecies_cursor = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+        #                                                     "national_scientific_name",
+        #                                                     "ca_nname_level <> 'Species'")
+        #
+        # # Set parameter filter to use a ValueList and populate the values from SearchCursor
+        # param_infraspecies.filter.type = "ValueList"
+        # param_infraspecies.filter.list = sorted([row[0] for row in biotics_infraspecies_cursor])
+        #
+        # ## CHANGE THIS PARAMETER TO A BOOLEAN
+        # # Yes/No parameter
+        # param_includefullspecies = arcpy.Parameter(
+        #     displayName='Do you want to process the full species too?',
+        #     name='includefullspecies',
+        #     datatype='GPString',
+        #     parameterType='Required',
+        #     direction='Input')
+        #
+        # # Filter list of available responses
+        # param_includefullspecies.filter.list = ["Yes", "No"]
+        #
+        # # Default selection
+        # param_includefullspecies.value = "No"
+        #
+        # params = [param_infraspecies, param_includefullspecies]
+        # return params
+
         """Define parameter definitions."""
         param_infraspecies = arcpy.Parameter(
             displayName="Infraspecies Name:",
@@ -223,21 +292,25 @@ class ToolInfraspecies(object):
         param_infraspecies.filter.type = "ValueList"
         param_infraspecies.filter.list = sorted([row[0] for row in biotics_infraspecies_cursor])
 
-        # Yes/No parameter
+        # Yes/No parameter - changed to a boolean
         param_includefullspecies = arcpy.Parameter(
             displayName='Do you want to process the full species too?',
             name='includefullspecies',
-            datatype='GPString',
+            datatype='GPBoolean',
             parameterType='Required',
             direction='Input')
 
-        # Filter list of available responses
-        param_includefullspecies.filter.list = ["Yes", "No"]
+        param_french_names = arcpy.Parameter(
+            displayName="Use French species name?",
+            name="french_name",
+            datatype="GPBoolean",
+            parameterType="Required",
+            direction="Input")
 
-        # Default selection
-        param_includefullspecies.value = "No"
+        params = [param_infraspecies,
+                  param_includefullspecies,
+                  param_french_names]
 
-        params = [param_infraspecies, param_includefullspecies]
         return params
 
     def isLicensed(self):
