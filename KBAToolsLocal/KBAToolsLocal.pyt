@@ -46,11 +46,38 @@ class ToolFullSpeciesMapping(object):
         self.canRunInBackground = False
 
     def getParameterInfo(self):
+        # """Define parameter definitions."""
+        # param_species = arcpy.Parameter(
+        #     displayName="Species Name:",
+        #     name="speciesnamestring",
+        #     datatype="GPString",
+        #     parameterType="Required",
+        #     direction="Input")
+        #
+        # # Create a search cursor to filter the values to show only full species names
+        # biotics_species_cursor = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
+        #                                                "national_scientific_name",
+        #                                                "ca_nname_level = 'Species'")
+        #
+        # # Set parameter filter to use a ValueList and populate the values from SearchCursor
+        # param_species.filter.type = "ValueList"
+        # param_species.filter.list = sorted([row[0] for row in biotics_species_cursor])
+        #
+        # params = [param_species]
+        # return params
+
         """Define parameter definitions."""
         param_species = arcpy.Parameter(
             displayName="Species Name:",
             name="speciesnamestring",
             datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+
+        param_french_names = arcpy.Parameter(
+            displayName="Use French species name?",
+            name="french_name",
+            datatype="GPBoolean",
             parameterType="Required",
             direction="Input")
 
@@ -63,7 +90,7 @@ class ToolFullSpeciesMapping(object):
         param_species.filter.type = "ValueList"
         param_species.filter.list = sorted([row[0] for row in biotics_species_cursor])
 
-        params = [param_species]
+        params = [param_species, param_french_names]
         return params
 
     def isLicensed(self):
