@@ -2,7 +2,7 @@
 # Script Name:      FullSpeciesMappingTool.py      "MAPPING TOOL FOR FULL SPECIES" [SINGLE GROUP LAYER]
 #
 # Script Created:   2022-01-05
-# Last Updated:     2022-02-15
+# Last Updated:     2022-04-26
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
@@ -13,6 +13,8 @@
 #                   Creates output data that is grouped for multiple species ID values.
 #                   Contains logic to handle ECCC Range Maps, ECCC Critical Habitat & IUCN Range Maps separately from
 #                   other InputPolygon records.
+#
+# Update:           Add french names to KBA Tools.
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Import libraries
