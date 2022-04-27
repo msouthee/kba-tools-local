@@ -336,7 +336,7 @@ class ToolInfraspecies(object):
         # Set parameter filter to use a ValueList and populate the values from SearchCursor
         param_infraspecies.filter.type = "ValueList"
         param_infraspecies.filter.list = sorted([row[0] for row in biotics_infraspecies_cursor])
-        #
+
         # # Yes/No parameter
         # param_includefullspecies = arcpy.Parameter(
         #     displayName='Do you want to process the full species too?',

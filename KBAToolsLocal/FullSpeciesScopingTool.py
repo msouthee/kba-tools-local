@@ -2,7 +2,7 @@
 # Script Name:      FullSpeciesScopingTool.py      "SCOPING TOOL FOR FULL SPECIES" [SEPARATE GROUP LAYERS]
 #
 # Script Created:   2022-02-10
-# Last Updated:     2022-02-15
+# Last Updated:     2022-04-26
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2022
 #
@@ -11,6 +11,8 @@
 #                   Creates separate output data layers for each species ID value.
 #                   Contains logic to handle ECCC Range Maps, ECCC Critical Habitat & IUCN Range Maps separately from
 #                   other InputPolygon records.
+#
+# Update:           Added the ability to choose to use the french species name instead of english species names.
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Import libraries
