@@ -486,7 +486,7 @@ class Tool:
                 arcpy.AddWarning("There is no spatial data for this species.")
 
             # # CHECK TO SEE IF THE USER WANTS TO PROCESS THE FULL SPECIES ..........................................
-            # if param_includefullspecies = false
+            # if param_includefullspecies is False or None
             if not param_includefullspecies:
                 pass  # Do nothing
 
@@ -528,6 +528,7 @@ class Tool:
                         full_speciesid = row[0]
                         sci_name = row[3]
                         en_name = row[4]
+                        fr_name = row[5]
 
                 arcpy.AddMessage("Species ID: {} ({}).".format(full_speciesid, sci_name))
 
