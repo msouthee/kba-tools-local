@@ -221,11 +221,11 @@ class Tool:
         param_infraspecies = parameters[0].valueAsText
         arcpy.AddMessage("Species: {}".format(param_infraspecies))
 
-        # This is a boolean parameter, if the box is checked then the value is True
+        # This is a boolean parameter, if the box is checked then the value is True, otherwise None
         param_includefullspecies = parameters[1].value
         arcpy.AddMessage("Include full species: {}".format(param_includefullspecies))
 
-        # This is a boolean parameter, if the box is checked then the value is True
+        # This is a boolean parameter, if the box is checked then the value is True, otherwise None
         param_french_name = parameters[2].value
         arcpy.AddMessage("Use French Name: {}".format(param_french_name))
 
@@ -393,8 +393,8 @@ class Tool:
                     arcpy.AddMessage("Species Level: {}".format(s_level))
                     arcpy.AddMessage("Element Code: {}".format(element_code))
 
-            # Check if french name exists, if null then use english name
-            if not fr_name:
+            # If param_french_name is True, then check if fr_name exists, if None then use en_name
+            if param_french_name and not fr_name:
                 arcpy.AddMessage("There is no french name for this species. Revert to using english name.")
                 # Set the french name parameter to False
                 param_french_name = False
@@ -409,10 +409,21 @@ class Tool:
 
             # # USE FUNCTIONS TO CREATE GROUP LAYER AND POINTS/LINES/EOS LAYERS [FOR INFRASPECIES] ...................
             # Create the group layer by calling the create_infraspecies_group_lyr() function defined in the tool
-            primary_infraspecies_group_lyr = Tool.create_infraspecies_group_lyr(m,
-                                                                                new_group_lyr,
-                                                                                en_name,
-                                                                                sci_name)
+            # Use french or english name depending on parameters
+
+            # if the parameter to use french names is True, use french name
+            if param_french_name:
+                primary_infraspecies_group_lyr = Tool.create_infraspecies_group_lyr(m,
+                                                                                    new_group_lyr,
+                                                                                    fr_name,
+                                                                                    sci_name)
+
+            # if the parameter to use french names is False or None, use english name
+            else:
+                primary_infraspecies_group_lyr = Tool.create_infraspecies_group_lyr(m,
+                                                                                    new_group_lyr,
+                                                                                    en_name,
+                                                                                    sci_name)
 
             # Call the create_lyr() function x3 to create the point, lines & EO Layers
             Tool.create_lyr(m, primary_infraspecies_group_lyr, speciesid, 'InputPoint')
@@ -520,11 +531,23 @@ class Tool:
 
                 # # USE FUNCTIONS TO CREATE OUTPUT LAYERS FOR THE PARENT SPECIES ...........................
                 # Create the species group layer using the create_optional_species_group_lyr function
-                full_species_group_lyr = Tool.create_optional_species_group_lyr(m,
-                                                                                new_group_lyr,
-                                                                                en_name,
-                                                                                sci_name,
-                                                                                primary_infraspecies_group_lyr)
+                # Use french or english name depending on parameters
+
+                # if the parameter to use french names is True, use french name
+                if param_french_name:
+                    full_species_group_lyr = Tool.create_optional_species_group_lyr(m,
+                                                                                    new_group_lyr,
+                                                                                    fr_name,
+                                                                                    sci_name,
+                                                                                    primary_infraspecies_group_lyr)
+
+                # if the parameter to use french names is False or None, use english name
+                else:
+                    full_species_group_lyr = Tool.create_optional_species_group_lyr(m,
+                                                                                    new_group_lyr,
+                                                                                    en_name,
+                                                                                    sci_name,
+                                                                                    primary_infraspecies_group_lyr)
 
                 # Call the create_lyr() function x3 for points, lines & EOs
                 Tool.create_lyr(m, full_species_group_lyr, full_speciesid, 'InputPoint')
