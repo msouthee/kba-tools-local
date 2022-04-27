@@ -2,7 +2,7 @@
 # Script Name:      FullSpeciesScopingTool.py      "SCOPING TOOL FOR FULL SPECIES" [SEPARATE GROUP LAYERS]
 #
 # Script Created:   2022-02-10
-# Last Updated:     2022-02-15
+# Last Updated:     2022-04-26
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2022
 #
@@ -11,6 +11,8 @@
 #                   Creates separate output data layers for each species ID value.
 #                   Contains logic to handle ECCC Range Maps, ECCC Critical Habitat & IUCN Range Maps separately from
 #                   other InputPolygon records.
+#
+# Update:           Added the ability to choose to use the french species name instead of english species names.
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Import libraries
@@ -220,9 +222,15 @@ class Tool:
 
         # # SET VARIABLES FOR THE SCRIPT ...............................................................................
 
-        # Variable from parameter defined in .pyt
+        # Make variables from input parameters defined in .pyt
+        # Input species from filtered list in dropdown menu in tool dialog
         param_species = parameters[0].valueAsText
-        arcpy.AddMessage("Species: {0}".format(param_species))
+        arcpy.AddMessage("Species: {}".format(param_species))
+
+        # This is a boolean parameter, if the box is checked then the value is True, otherwise None
+        param_french_name = parameters[1].value
+        arcpy.AddMessage("Use French Name: {}".format(param_french_name))
+        # arcpy.AddMessage(type(param_french_name))
 
         # SQL query based on the input species parameter
         sql = "national_scientific_name = '{}'".format(param_species)
@@ -236,7 +244,8 @@ class Tool:
                           "element_code",
                           "ca_nname_level",
                           "national_scientific_name",
-                          "national_engl_name"]
+                          "national_engl_name",
+                          "national_fr_name"]  # Added french species names
 
         # Fields in InputDataset that are used in the search cursor
         inputdataset_fields = ["inputdatasetid",
@@ -378,13 +387,24 @@ class Tool:
                     element_code = row[1]
                     s_level = row[2]
                     sci_name = row[3]
-                    common_name = row[4]
+                    en_name = row[4]
+                    fr_name = row[5]
 
                     arcpy.AddMessage("Species ID: {}".format(speciesid))
                     arcpy.AddMessage("Scientific Name: {}".format(sci_name))
-                    arcpy.AddMessage("Common Name: {}".format(common_name))
+                    arcpy.AddMessage("English Name: {}".format(en_name))
+                    arcpy.AddMessage("French Name: {}".format(fr_name))
                     arcpy.AddMessage("Species Level: {}".format(s_level))
                     arcpy.AddMessage("Element Code: {}".format(element_code))
+
+            # If param_french_name is True, then check if fr_name exists, if None then use en_name
+            if param_french_name and not fr_name:
+                arcpy.AddMessage("There is no french name for this species. Revert to using english name.")
+                # Set the french name parameter to False
+                param_french_name = False
+
+            else:
+                pass
 
             # Exit the search cursor, but keep the variables from inside the search cursor
             del row, biotics_cursor
@@ -414,7 +434,7 @@ class Tool:
                     else:
                         pass
 
-            del species_cursor, species_row  # delete some variables
+            # del species_cursor, species_row  # delete some variables
 
             # Check to see if infraspecies exist by checking if there are values in the infraspeciesid_list
             if not infraspeciesid_list:  # List is empty
@@ -429,11 +449,23 @@ class Tool:
 
             # # USE FUNCTIONS TO CREATE GROUP LAYER AND POINTS/LINES/EOS LAYERS [FOR FULL SPECIES] ...................
             # Create the group layer by calling the create_species_group_lyr() function defined in the tool
-            species_group_lyr = Tool.create_species_group_lyr(m,
-                                                              new_group_lyr,
-                                                              common_name,
-                                                              sci_name,
-                                                              infraspecies_exist)
+            # Use french or english name depending on parameters
+
+            # if the parameter to use french names is True, use french name
+            if param_french_name:
+                species_group_lyr = Tool.create_species_group_lyr(m,
+                                                                  new_group_lyr,
+                                                                  fr_name,
+                                                                  sci_name,
+                                                                  infraspecies_exist)
+
+            # if the parameter to use french names is False or None, use english name
+            else:
+                species_group_lyr = Tool.create_species_group_lyr(m,
+                                                                  new_group_lyr,
+                                                                  en_name,
+                                                                  sci_name,
+                                                                  infraspecies_exist)
 
             # Call the create_lyr() function x3 to create the point, lines & EO Layers
             Tool.create_lyr(m, species_group_lyr, speciesid, 'InputPoint')
@@ -514,17 +546,29 @@ class Tool:
                             # Assign relevant variables from the biotics record
                             infraspeciesid = row[0]
                             sci_name = row[3]
-                            common_name = row[4]
+                            en_name = row[4]
+                            fr_name = row[5]
 
                             arcpy.AddMessage("Species ID: {} ({}).".format(infraspeciesid, sci_name))
 
                             # # USE FUNCTIONS TO CREATE OUTPUT LAYERS FOR INFRASPECIES ...........................
                             # Create the infraspecies group layer using the create_infraspecies_group_lyr function
-                            infra_group_lyr = Tool.create_infraspecies_group_lyr(m,
-                                                                                 new_group_lyr,
-                                                                                 common_name,
-                                                                                 sci_name,
-                                                                                 species_group_lyr)
+
+                            # if the parameter to use french names is True, use french name
+                            if param_french_name:
+                                infra_group_lyr = Tool.create_infraspecies_group_lyr(m,
+                                                                                     new_group_lyr,
+                                                                                     fr_name,
+                                                                                     sci_name,
+                                                                                     species_group_lyr)
+
+                            # if the parameter to use french names is False or None, use english name
+                            else:
+                                infra_group_lyr = Tool.create_infraspecies_group_lyr(m,
+                                                                                     new_group_lyr,
+                                                                                     en_name,
+                                                                                     sci_name,
+                                                                                     species_group_lyr)
 
                             # Call the create_lyr() function x3 for points, lines & EOs
                             Tool.create_lyr(m, infra_group_lyr, infraspeciesid, 'InputPoint')
