@@ -44,7 +44,7 @@ class Toolbox(object):
 class ToolFullSpeciesMapping(object):
     def __init__(self):
         """Define the Full Species Mapping Tool."""
-        self.label = "Species Mapping Tool"
+        self.label = "Mapping Tool - Species"
         self.description = "Add data to the map in a single group for species and infraspecies."
         self.canRunInBackground = False
 
@@ -139,9 +139,10 @@ class ToolFullSpeciesMapping(object):
 class ToolFullSpeciesScoping(object):
     def __init__(self):
         """Define the Full Species Scoping Tool."""
-        self.label = "Species Scoping Tool"
+        self.label = "Exploratory Tool - Species & Infraspecies"
         self.description = "Add data to the map in separate group for species and infraspecies."
         self.canRunInBackground = False
+        self.category = "Exploratory Data Analysis"
 
     def getParameterInfo(self):
         # """Define parameter definitions."""
@@ -234,7 +235,7 @@ class ToolFullSpeciesScoping(object):
 class ToolInfraspecies(object):
     def __init__(self):
         """Define the Infraspecies Tool."""
-        self.label = "Infraspecies Tool"
+        self.label = "Mapping Tool - Infraspecies"
         self.description = "Add data to the map in separate groups for infraspecies and its full species, " \
                            "if the user wants to display the full species data too."
         self.canRunInBackground = False
