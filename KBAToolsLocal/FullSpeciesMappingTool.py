@@ -2,7 +2,8 @@
 # Script Name:      FullSpeciesMappingTool.py      "MAPPING TOOL FOR FULL SPECIES" [SINGLE GROUP LAYER]
 #
 # Script Created:   2022-01-05
-# Last Updated:     2022-04-26 - Feature Request: 2024-03-25
+# Last Updated:     2022-04-26
+# Feature Request:  2024-03-25
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
@@ -14,11 +15,15 @@
 #                   Contains logic to handle ECCC Range Maps, ECCC Critical Habitat & IUCN Range Maps separately from
 #                   other InputPolygon records.
 #
-# Update:           Added the ability to choose to use the french species name instead of english species names.
+# Update:           Added the ability to choose to use the French species name instead of english species names.
 #
-# Feature Request:  Seperate out the following datasets so that they are also handled seperately from the InputPolygon
-#                   Records: WCSC Area of Occupancy Maps, WCSC Range Maps, COSEWIC Range Maps, COSEWIC Extent of
-#                   Occurrence Maps.
+# Feature Request:  Seperate out the following datasets so that they have their own colours and are not included in the
+#                   InputPolygon Records:
+#                       WCSC Area of Occupancy Maps,
+#                       WCSC Range Maps,
+#                       COSEWIC Range Maps,
+#                       COSEWIC Extent of
+#                       Occurrence Maps.
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Import libraries
@@ -123,7 +128,7 @@ class Tool:
         else:
             raise KBAExceptions.SpeciesDataError
 
-    # Define a function to create the InputPolygon layers (w/out range & critical habitat data) ****
+    # Define a function to create the InputPolygon layers (w/out the filtered data layers) ****
     def create_poly_lyr(m, grp_lyr, speciesid_tuple, range_data_list, infra_exists):
         # arcpy.AddMessage("Run create_poly_lyr function for InputPolygon.")
 
@@ -135,24 +140,24 @@ class Tool:
 
             # Assign naming conventions for polygon layer in TOC & sql query based on infra parameter:
             if infra_exists is True:
-                # InputPolygon_SpeciesID+
+                # Naming convention: InputPolygon_SpeciesID+
                 lyr_name = "InputPolygon_{}+".format(speciesid_tuple[0])
 
-                # SQL statement to select InputPolygons for the species w/out Range & Critical Habitat data records
+                # SQL statement to select InputPolygons for the species w/out the filtered data records
                 range_sql = "speciesid IN {} And inputdatasetid NOT IN ({})".format(speciesid_tuple,
                                                                                     range_data_string)
 
             else:
-                # InputPolygon_SpeciesID
+                # Naming convention: InputPolygon_SpeciesID
                 lyr_name = "InputPolygon_{}".format(speciesid_tuple[0])
 
-                # SQL statement to select InputPolygons for the species w/out Range & Critical Habitat data records
+                # SQL statement to select InputPolygons for the species w/out filtered data records
                 range_sql = "speciesid = {} And inputdatasetid NOT IN ({})".format(speciesid_tuple[0],
                                                                                    range_data_string)
 
             # arcpy.AddMessage(range_sql)
 
-            # Make a new feature layer with sql query and added .getOutput(0) function
+            # Make a new feature layer with sql query to filter out datasets and added .getOutput(0) function
             new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, range_sql,
                                                         None).getOutput(0)
 
@@ -178,33 +183,33 @@ class Tool:
         else:
             raise KBAExceptions.SpeciesDataError
 
-    # Define a function to create the ECCC range / IUCN range / ECCC critical habitat data layers
-    def create_range_lyr(m, grp_lyr, speciesid_tuple, range_type, range_data_list, infra_exists):
+    # Define a function to create the data layers for the filtered datasets [ECCC/IUCN/WCSC/COSEWIC]
+    def create_range_lyr(m, grp_lyr, speciesid_tuple, map_type, inputdatasetid_list, infra_exists):
         # arcpy.AddMessage("Run create_range_lyr function for {}.".format(range_type))
 
         # Check that the InputPolygon layer is loaded and that there are records in the range_data_list parameter
-        if len(m.listLayers("InputPolygon")) > 0 and len(range_data_list) > 0:
+        if len(m.listLayers("InputPolygon")) > 0 and len(inputdatasetid_list) > 0:
             lyr = m.listLayers("InputPolygon")[0]
 
             # Convert the range_data_list into string variable separated by commas for use in the SQL statement
-            range_data_string = ', '.join(str(i) for i in range_data_list)
+            inputdatasetid_list_as_string = ', '.join(str(i) for i in inputdatasetid_list)
 
-            # Assign naming convention for Range / Critical Habitat in TOC based on infra parameter:
+            # Assign naming convention in TOC based on infra parameter:
             if infra_exists is True:
-                # ECCCRangeMaps_SpeciesID+ / IUCNRangeMaps_SpeciesID+
-                lyr_name = "{}_{}+".format(range_type, speciesid_tuple[0])
+                # Specify naming conventions
+                lyr_name = "{}_{}+".format(map_type, speciesid_tuple[0])
 
-                # SQL statement to select InputPolygons for the species and Range / Critical Habitat data only
+                # SQL statement to select filtered InputPolygons for the species and correct dataset
                 range_sql = "speciesid IN {} And inputdatasetid IN ({})".format(speciesid_tuple,
-                                                                                range_data_string)
+                                                                                inputdatasetid_list_as_string)
 
             else:
-                # ECCCRangeMaps_SpeciesID / IUCNRangeMaps_SpeciesID
-                lyr_name = "{}_{}".format(range_type, speciesid_tuple[0])
+                # Specify naming conventions
+                lyr_name = "{}_{}".format(map_type, speciesid_tuple[0])
 
-                # SQL statement to select InputPolygons for the species and Range / Critical Habitat data only
+                # SQL statement to select filtered InputPolygons for the species and correct dataset
                 range_sql = "speciesid = {} And inputdatasetid IN ({})".format(speciesid_tuple[0],
-                                                                               range_data_string)
+                                                                               inputdatasetid_list_as_string)
 
             # arcpy.AddMessage(range_sql)
 
@@ -215,28 +220,52 @@ class Tool:
             # Get a count of the records in the new feature layer
             row_count = int(arcpy.GetCount_management(new_lyr).getOutput(0))
 
-            # Check to see if there are any records for the species and the Range / Critical Habitat type
+            # Check to see if there are any records for the species and filtered dataset type
             if row_count != 0:
-                m.addLayerToGroup(grp_lyr, new_lyr, "BOTTOM")  # Add the new range / critical habitat layer
+                m.addLayerToGroup(grp_lyr, new_lyr, "BOTTOM")  # Add the new filtered data layer
                 new_lyr = m.listLayers(lyr_name)[0]
                 new_lyr.visible = False  # Turn off the visibility for the new layer
 
-                if range_type == "ECCCRangeMaps":
+                if map_type == "ECCCRangeMaps":
                     # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
                     sym = new_lyr.symbology
                     sym.renderer.symbol.applySymbolFromGallery("ECCC Range Map")
                     new_lyr.symbology = sym
 
-                elif range_type == "IUCNRangeMaps":
+                elif map_type == "IUCNRangeMaps":
                     # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
                     sym = new_lyr.symbology
                     sym.renderer.symbol.applySymbolFromGallery("IUCN Range Map")
                     new_lyr.symbology = sym
 
-                else:
+                elif map_type == "ECCCCriticalHabitatMaps":
                     # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
                     sym = new_lyr.symbology
                     sym.renderer.symbol.applySymbolFromGallery("ECCC Critical Habitat")
+                    new_lyr.symbology = sym
+
+                elif map_type == "WCSCAOOMaps":
+                    # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
+                    sym = new_lyr.symbology
+                    sym.renderer.symbol.applySymbolFromGallery("WCSC AOO Map")
+                    new_lyr.symbology = sym
+
+                elif map_type == "WCSCRangeMaps":
+                    # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
+                    sym = new_lyr.symbology
+                    sym.renderer.symbol.applySymbolFromGallery("WCSC Range Map")
+                    new_lyr.symbology = sym
+
+                elif map_type == "COSEWCICRangeMaps":
+                    # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
+                    sym = new_lyr.symbology
+                    sym.renderer.symbol.applySymbolFromGallery("COSEWCIC Range Map")
+                    new_lyr.symbology = sym
+
+                elif map_type == "COSEWCICEOOMaps":
+                    # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
+                    sym = new_lyr.symbology
+                    sym.renderer.symbol.applySymbolFromGallery("COSEWCIC EOO Map")
                     new_lyr.symbology = sym
 
             else:
@@ -503,7 +532,7 @@ class Tool:
                                                   sci_name,
                                                   infraspecies_exist)
 
-            # if the parameter to use french names is False or None, use english name
+            # if the parameter to use French names is False or None, use english name
             else:
                 group_lyr = Tool.create_group_lyr(m,
                                                   new_group_lyr,
@@ -526,6 +555,7 @@ class Tool:
                                        "datasetsourceid = 994") as inputdataset_cursor:
                 for inputdataset_record in inputdataset_cursor:
                     eccc_range_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
+                    eccc_range_map = "ECCCRangeMaps"
 
             # # GET LIST OF IUCN RANGE MAP DATASETS ---------------------------------------------------------------
             # Search cursor to get the InputDatasetID values from InputDataset table for records where
@@ -535,6 +565,7 @@ class Tool:
                                        "datasetsourceid = 996") as inputdataset_cursor:
                 for inputdataset_record in inputdataset_cursor:
                     iucn_range_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
+                    iucc_range_map = "IUCNRangeMaps"
 
             # # GET LIST OF ECCC CRITICAL HABITAT DATASETS --------------------------------------------------------
             # Search cursor to get the InputDatasetID values from InputDataset table for records where
@@ -544,6 +575,7 @@ class Tool:
                                        "datasetsourceid = 19") as inputdataset_cursor:
                 for inputdataset_record in inputdataset_cursor:
                     crit_habitat_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
+                    ecc_crit_habitat_map = "ECCCCriticalHabitatMaps"
 
             # # GET LIST OF WCSC AREA OF OCCUPANCY MAP DATASETS --------------------------------------------------
             # Search cursor to get the InputDatasetID values from InputDataset table for records where
@@ -553,6 +585,7 @@ class Tool:
                                        "datasetsourceid = 1096") as inputdataset_cursor:
                 for inputdataset_record in inputdataset_cursor:
                     wcsc_aoo_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
+                    wcsc_aoo_map = "WCSCAOOMaps"
 
             # # GET LIST OF WCSC RANGE MAP DATASETS --------------------------------------------------
             # Search cursor to get the InputDatasetID values from InputDataset table for records where
@@ -562,6 +595,7 @@ class Tool:
                                        "datasetsourceid = 1097") as inputdataset_cursor:
                 for inputdataset_record in inputdataset_cursor:
                     wcsc_range_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
+                    wcsc_range_map = "WCSCRangeMaps"
 
             # # GET LIST OF COSEWIC RANGE MAP DATASETS --------------------------------------------------
             # Search cursor to get the InputDatasetID values from InputDataset table for records where
@@ -571,6 +605,7 @@ class Tool:
                                        "datasetsourceid = 1120") as inputdataset_cursor:
                 for inputdataset_record in inputdataset_cursor:
                     cosewic_range_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
+                    cosewic_range_map = "COSEWCICRangeMaps"
 
             # # GET LIST OF COSEWIC EXTENT OF OCCURRENCE MAP DATASETS --------------------------------------------------
             # Search cursor to get the InputDatasetID values from InputDataset table for records where
@@ -580,33 +615,33 @@ class Tool:
                                        "datasetsourceid = 1121") as inputdataset_cursor:
                 for inputdataset_record in inputdataset_cursor:
                     cosewic_eoo_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
+                    cosewic_eoo_map = "COSEWICEOOMaps"
 
             del inputdataset_record, inputdataset_cursor
 
-            # Create a list of all the datasets that are going to be filtered out of the InputPolygon layer
+            # Create a list of all the inputdatasetids that need to be filtered out of the InputPolygon layer
             filtered_polygon_layers_list = eccc_range_data_list + iucn_range_data_list + crit_habitat_data_list + \
                                            wcsc_aoo_data_list + wcsc_range_data_list + cosewic_range_data_list + \
                                            cosewic_eoo_data_list
 
-
-            # # CREATE OUTPUT LAYERS IN TOC FOR INPUTPOLYGONS AND FILTERED DATASETS ............
-            # Call the function to create the InputPolygon layer without the datasets in the filtered_polygon_layers_list
+            # # CREATE OUTPUT LAYERS IN TOC FOR INPUTPOLYGONS AND SEPARATE FILTERED DATASETS ............
+            # Call the function to create the InputPolygon layer w/out the datasets in the filtered_polygon_layers_list
             Tool.create_poly_lyr(m, group_lyr, speciesid_tuple, filtered_polygon_layers_list, infraspecies_exist)
 
-            # Call the create_range_lyr() function x7 to process the filtered data list as seperate layer outputs
-            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, "ECCCRangeMaps", eccc_range_data_list,
+            # Call the create_range_lyr() function x7 to process each of the filtered datasets as seperate outputs
+            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, eccc_range_map, eccc_range_data_list,
                                   infraspecies_exist)
-            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, "IUCNRangeMaps", iucn_range_data_list,
+            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, iucc_range_map, iucn_range_data_list,
                                   infraspecies_exist)
-            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, "ECCCCriticalHabitat", crit_habitat_data_list,
+            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, ecc_crit_habitat_map, crit_habitat_data_list,
                                   infraspecies_exist)
-            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, "WCSCAOOMaps", wcsc_aoo_data_list,
+            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, wcsc_aoo_map, wcsc_aoo_data_list,
                                   infraspecies_exist)
-            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, "WCSCRangeMaps", wcsc_range_data_list,
+            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, wcsc_range_map, wcsc_range_data_list,
                                   infraspecies_exist)
-            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, "COSEWICRangeMaps", cosewic_range_data_list,
+            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, cosewic_range_map, cosewic_range_data_list,
                                   infraspecies_exist)
-            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, "COSEWICEOOMaps", cosewic_eoo_data_list,
+            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, cosewic_eoo_map, cosewic_eoo_data_list,
                                   infraspecies_exist)
 
             m.clearSelection()  # clear all selections
