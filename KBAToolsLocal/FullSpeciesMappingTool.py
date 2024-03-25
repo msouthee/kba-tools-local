@@ -17,7 +17,7 @@
 #
 # Update:           Added the ability to choose to use the French species name instead of english species names.
 #
-# Feature Request:  Seperate out the following datasets so that they have their own colours and are not included in the
+# Feature Request:  Separate out the following datasets so that they have their own colours and are not included in the
 #                   InputPolygon Records:
 #                       WCSC Area of Occupancy Maps,
 #                       WCSC Range Maps,
@@ -129,14 +129,14 @@ class Tool:
             raise KBAExceptions.SpeciesDataError
 
     # Define a function to create the InputPolygon layers (w/out the filtered data layers) ****
-    def create_poly_lyr(m, grp_lyr, speciesid_tuple, range_data_list, infra_exists):
+    def create_poly_lyr(m, grp_lyr, speciesid_tuple, inputdatasetid_list, infra_exists):
         # arcpy.AddMessage("Run create_poly_lyr function for InputPolygon.")
 
         if len(m.listLayers("InputPolygon")) > 0:
             lyr = m.listLayers("InputPolygon")[0]
 
-            # Convert the range_data_list into string variable separated by commas for use in the SQL statement
-            range_data_string = ', '.join(str(i) for i in range_data_list)
+            # Convert the filtered inputdatasetid_list into a string separated by commas for use in the SQL statement
+            inputdatasetid_list_as_string = ', '.join(str(i) for i in inputdatasetid_list)
 
             # Assign naming conventions for polygon layer in TOC & sql query based on infra parameter:
             if infra_exists is True:
@@ -145,7 +145,7 @@ class Tool:
 
                 # SQL statement to select InputPolygons for the species w/out the filtered data records
                 range_sql = "speciesid IN {} And inputdatasetid NOT IN ({})".format(speciesid_tuple,
-                                                                                    range_data_string)
+                                                                                    inputdatasetid_list_as_string)
 
             else:
                 # Naming convention: InputPolygon_SpeciesID
@@ -153,7 +153,7 @@ class Tool:
 
                 # SQL statement to select InputPolygons for the species w/out filtered data records
                 range_sql = "speciesid = {} And inputdatasetid NOT IN ({})".format(speciesid_tuple[0],
-                                                                                   range_data_string)
+                                                                                   inputdatasetid_list_as_string)
 
             # arcpy.AddMessage(range_sql)
 
@@ -259,13 +259,20 @@ class Tool:
                 elif map_type == "COSEWCICRangeMaps":
                     # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
                     sym = new_lyr.symbology
-                    sym.renderer.symbol.applySymbolFromGallery("COSEWCIC Range Map")
+                    sym.renderer.symbol.applySymbolFromGallery("COSEWIC Range Map")
                     new_lyr.symbology = sym
 
-                elif map_type == "COSEWCICEOOMaps":
+                ### THIS SYMBOLOGY IS NOT WORKING
+                # elif map_type == "COSEWCICEOOMaps":
+                #     # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
+                #     sym = new_lyr.symbology
+                #     sym.renderer.symbol.applySymbolFromGallery("COSEWIC EOO Map")
+                #     new_lyr.symbology = sym
+
+                else:
                     # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
                     sym = new_lyr.symbology
-                    sym.renderer.symbol.applySymbolFromGallery("COSEWCIC EOO Map")
+                    sym.renderer.symbol.applySymbolFromGallery("COSEWIC EOO Map")
                     new_lyr.symbology = sym
 
             else:
@@ -313,10 +320,10 @@ class Tool:
         eccc_range_data_list = []  # hold inputdatasetid values for ECCC range maps - datasetsourceid = 994
         iucn_range_data_list = []  # hold inputdatasetid values for IUCN range maps - datasetsourceid = 996
         crit_habitat_data_list = []  # hold inputdatasetid values for ECCC critical habitat - datasetsourceid = 19
-        wcsc_aoo_data_list = [] # hold inputdatasetid values for WCSC Area of Occupancy maps - datasetsourceid = 1096
-        wcsc_range_data_list = [] # hold inputdatasetid values for WCSC range maps - datasetsourceid = 1097
-        cosewic_range_data_list = [] # hold inputdatasetid values for COSEWIC range maps - datasetsourceid = 1120
-        cosewic_eoo_data_list = [] # hold inputdatasetid values for COSEWIC Extent of Occupancy maps - dsid = 1121
+        wcsc_aoo_data_list = []  # hold inputdatasetid values for WCSC Area of Occupancy maps - datasetsourceid = 1096
+        wcsc_range_data_list = []  # hold inputdatasetid values for WCSC range maps - datasetsourceid = 1097
+        cosewic_range_data_list = []  # hold inputdatasetid values for COSEWIC range maps - datasetsourceid = 1120
+        cosewic_eoo_data_list = []  # hold inputdatasetid values for COSEWIC Extent of Occupancy maps - dsid = 1121
 
         # Datasets/tables that need to exist in the map and not have active definition query
         dataset_list = ["InputPoint", "InputLine", "InputPolygon", "EO_Polygon"]
@@ -461,7 +468,7 @@ class Tool:
             # If param_french_name is True, then check if fr_name exists, if None then use en_name
             if param_french_name and not fr_name:
                 arcpy.AddMessage("There is no french name for this species. Revert to using english name.")
-                # Set the french name parameter to False
+                # Set the French name parameter to False
                 param_french_name = False
 
             else:
