@@ -2,7 +2,7 @@
 # Script Name:      FullSpeciesMappingTool.py      "MAPPING TOOL FOR FULL SPECIES" [SINGLE GROUP LAYER]
 #
 # Script Created:   2022-01-05
-# Last Updated:     2022-04-26
+# Last Updated:     2022-04-26 - Feature Request: 2024-03-25
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
@@ -15,6 +15,10 @@
 #                   other InputPolygon records.
 #
 # Update:           Added the ability to choose to use the french species name instead of english species names.
+#
+# Feature Request:  Seperate out the following datasets so that they are also handled seperately from the InputPolygon
+#                   Records: WCSC Area of Occupancy Maps, WCSC Range Maps, COSEWIC Range Maps, COSEWIC Extent of
+#                   Occurrence Maps.
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Import libraries
