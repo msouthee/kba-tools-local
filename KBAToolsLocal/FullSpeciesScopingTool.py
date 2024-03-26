@@ -184,10 +184,10 @@ class Tool:
             lyr = m.listLayers("InputPolygon")[0]
 
             # Convert the value list into string variable separated by commas for use in the SQL statement
-            range_data_string = ', '.join(str(i) for i in inputdatasetid_list)
+            inputdatasetid_list_as_string = ', '.join(str(i) for i in inputdatasetid_list)
 
             # SQL statement to select InputPolygons for the filtered data only
-            range_sql = "speciesid = {} And inputdatasetid IN ({})".format(speciesid, range_data_string)
+            range_sql = "speciesid = {} And inputdatasetid IN ({})".format(speciesid, inputdatasetid_list_as_string)
 
             # Make a new feature layer with sql query and added .getOutput(0) function
             new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, range_sql,
