@@ -85,14 +85,14 @@ class Tool:
             # Assign naming conventions & sql query based on value of infra parameter:
             if infra_exists is True:
                 # InputPoint_SpeciesID+ / InputLine_SpeciesID+ / EO_Polygon_SpeciesID+
-                lyr_name = "{}_{}+".format(ft_type, speciesid_tuple[0])  # the original speciesID
+                lyr_name = "{} {}+".format(ft_type, speciesid_tuple[0])  # the original speciesID
 
                 # select all speciesid values in the tuple
                 sql_query = "speciesid IN {}".format(speciesid_tuple)
 
             else:
                 # InputPoint_SpeciesID / InputLine_SpeciesID / EO_Polygon_SpeciesID
-                lyr_name = "{}_{}".format(ft_type, speciesid_tuple[0])  # the original speciesID
+                lyr_name = "{} {}".format(ft_type, speciesid_tuple[0])  # the original speciesID
 
                 # select only the original species id
                 sql_query = "speciesid = {}".format(speciesid_tuple[0])  # the original speciesID
@@ -144,7 +144,7 @@ class Tool:
             # Assign naming conventions for polygon layer in TOC & sql query based on infra parameter:
             if infra_exists is True:
                 # Naming convention: InputPolygon_SpeciesID+
-                lyr_name = "InputPolygon_{}+".format(speciesid_tuple[0])
+                lyr_name = "InputPolygon {}+".format(speciesid_tuple[0])
 
                 # SQL statement to select InputPolygons for the species w/out the filtered data records
                 range_sql = "speciesid IN {} And inputdatasetid NOT IN ({})".format(speciesid_tuple,
@@ -152,7 +152,7 @@ class Tool:
 
             else:
                 # Naming convention: InputPolygon_SpeciesID
-                lyr_name = "InputPolygon_{}".format(speciesid_tuple[0])
+                lyr_name = "InputPolygon {}".format(speciesid_tuple[0])
 
                 # SQL statement to select InputPolygons for the species w/out filtered data records
                 range_sql = "speciesid = {} And inputdatasetid NOT IN ({})".format(speciesid_tuple[0],
@@ -200,7 +200,7 @@ class Tool:
             # Assign naming convention in TOC based on infra parameter:
             if infra_exists is True:
                 # Specify naming conventions
-                lyr_name = "{}_{}+".format(map_type, speciesid_tuple[0])
+                lyr_name = "{} {}+".format(map_type, speciesid_tuple[0])
 
                 # SQL statement to select filtered InputPolygons for the species and correct dataset
                 range_sql = "speciesid IN {} And inputdatasetid IN ({})".format(speciesid_tuple,
@@ -208,7 +208,7 @@ class Tool:
 
             else:
                 # Specify naming conventions
-                lyr_name = "{}_{}".format(map_type, speciesid_tuple[0])
+                lyr_name = "{} {}".format(map_type, speciesid_tuple[0])
 
                 # SQL statement to select filtered InputPolygons for the species and correct dataset
                 range_sql = "speciesid = {} And inputdatasetid IN ({})".format(speciesid_tuple[0],
@@ -483,7 +483,7 @@ class Tool:
             # Create the group layer by calling the create_group_lyr() function
             # Use French or english name depending on parameters
 
-            # if the parameter to use french names is True, use french name
+            # if the parameter to use French names is True, use french name
             if param_french_name:
                 group_lyr = Tool.create_group_lyr(m,
                                                   new_group_lyr,
@@ -499,13 +499,13 @@ class Tool:
                                                   sci_name,
                                                   infraspecies_exist)
 
-            # # CREATE OUTPUT LAYERS IN TOC FOR INPUT POINT/LINE and EO_POLYGON DATASETS............
+            # # CREATE OUTPUT LAYERS IN TOC FOR INPUTPOINT, INPUTLINE AND EO_POLYGON DATASETS............
             # Call the create_lyr() function x3 to create the point, lines & EO Layers
             Tool.create_lyr(m, group_lyr, speciesid_tuple, 'InputPoint', infraspecies_exist)
             Tool.create_lyr(m, group_lyr, speciesid_tuple, 'InputLine', infraspecies_exist)
             Tool.create_lyr(m, group_lyr, speciesid_tuple, 'EO_Polygon', infraspecies_exist)
 
-            # # CREATE OUTPUT LAYERS IN TOC AND DATASETID LISTS FOR RANGE / AOO / HABITAT DATASETS ...............
+            # # CREATE OUTPUT LAYERS IN TOC AND LIST OF DATASETIDS FOR RANGE / AOO / HABITAT DATASETS ...............
             # Iterate through the dictionary of filtered datasets
             for key in dataset_dict:
                 myname = dataset_dict[key][0]   # Get the name of the dataset from the dictionary
@@ -529,7 +529,7 @@ class Tool:
 
             m.clearSelection()  # clear all selections
 
-            # Check to see if there are any layers in the full species group layer, if empty delete it
+            # Check to see if there are output layers in the full species group layer, if empty delete it
             if len(group_lyr.listLayers()) > 0:
                 pass
             else:
