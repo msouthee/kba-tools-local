@@ -131,7 +131,7 @@ class Tool:
         else:
             raise KBAExceptions.SpeciesDataError
 
-    # Define a function to create the InputPolygon layers (w/out the filtered data layers) ****
+    # Define a function to create the InputPolygon layers (w/out the filtered data layers)
     def create_poly_lyr(m, grp_lyr, speciesid_tuple, inputdatasetid_list, infra_exists):
         # arcpy.AddMessage("Run create_poly_lyr function for InputPolygon.")
 
@@ -186,7 +186,7 @@ class Tool:
         else:
             raise KBAExceptions.SpeciesDataError
 
-    # Define a function to create the data layers for the filtered datasets [ECCC/IUCN/WCSC/COSEWIC]
+    # Define a function to create the data layers for the filtered datasets [ECCC/IUCN/WCSC/COSEWIC MAPS]
     def create_range_lyr(m, grp_lyr, speciesid_tuple, map_type, inputdatasetid_list, infra_exists):
         # arcpy.AddMessage("Run create_range_lyr function for {}.".format(range_type))
 
