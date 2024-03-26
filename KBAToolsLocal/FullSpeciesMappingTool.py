@@ -26,11 +26,14 @@
 #                       Occurrence Maps.
 # ----------------------------------------------------------------------------------------------------------------------
 
-# Import libraries
-import arcpy
 import sys
 import traceback
+
+# Import libraries
+import arcpy
+
 import KBAExceptions
+import KBAUtils
 
 
 # Define class called Tool
@@ -226,54 +229,10 @@ class Tool:
                 new_lyr = m.listLayers(lyr_name)[0]
                 new_lyr.visible = False  # Turn off the visibility for the new layer
 
-                if map_type == "ECCCRangeMaps":
-                    # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
-                    sym = new_lyr.symbology
-                    sym.renderer.symbol.applySymbolFromGallery("ECCC Range Map")
-                    new_lyr.symbology = sym
-
-                elif map_type == "IUCNRangeMaps":
-                    # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
-                    sym = new_lyr.symbology
-                    sym.renderer.symbol.applySymbolFromGallery("IUCN Range Map")
-                    new_lyr.symbology = sym
-
-                elif map_type == "ECCCCriticalHabitatMaps":
-                    # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
-                    sym = new_lyr.symbology
-                    sym.renderer.symbol.applySymbolFromGallery("ECCC Critical Habitat")
-                    new_lyr.symbology = sym
-
-                elif map_type == "WCSCAOOMaps":
-                    # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
-                    sym = new_lyr.symbology
-                    sym.renderer.symbol.applySymbolFromGallery("WCSC AOO Map")
-                    new_lyr.symbology = sym
-
-                elif map_type == "WCSCRangeMaps":
-                    # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
-                    sym = new_lyr.symbology
-                    sym.renderer.symbol.applySymbolFromGallery("WCSC Range Map")
-                    new_lyr.symbology = sym
-
-                elif map_type == "COSEWCICRangeMaps":
-                    # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
-                    sym = new_lyr.symbology
-                    sym.renderer.symbol.applySymbolFromGallery("COSEWIC Range Map")
-                    new_lyr.symbology = sym
-
-                ### THIS SYMBOLOGY IS NOT WORKING
-                # elif map_type == "COSEWCICEOOMaps":
-                #     # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
-                #     sym = new_lyr.symbology
-                #     sym.renderer.symbol.applySymbolFromGallery("COSEWIC EOO Map")
-                #     new_lyr.symbology = sym
-
-                else:
-                    # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
-                    sym = new_lyr.symbology
-                    sym.renderer.symbol.applySymbolFromGallery("COSEWIC EOO Map")
-                    new_lyr.symbology = sym
+                # Draw the symbology based on the name of the dataset called
+                sym = new_lyr.symbology
+                sym.renderer.symbol.applySymbolFromGallery(map_type)  # based on the parameter that is fed into function
+                new_lyr.symbology = sym
 
             else:
                 pass  # Do nothing
@@ -311,21 +270,14 @@ class Tool:
                           "national_engl_name",
                           "national_fr_name"]  # Added french species names
 
-        # Fields in InputDataset that are used in the search cursor
-        inputdataset_fields = ["inputdatasetid",
-                               "datasetsourceid"]
+        # Load dictionary of filtered datasets (i.e., Range/AOO/EOO maps) and corresponding datasetsourceid values
+        dataset_dict = KBAUtils.filtered_data_dict
 
         # Empty lists to hold data values
         speciesid_list = []  # hold speciesid values for full species and infraspecies
-        eccc_range_data_list = []  # hold inputdatasetid values for ECCC range maps - datasetsourceid = 994
-        iucn_range_data_list = []  # hold inputdatasetid values for IUCN range maps - datasetsourceid = 996
-        crit_habitat_data_list = []  # hold inputdatasetid values for ECCC critical habitat - datasetsourceid = 19
-        wcsc_aoo_data_list = []  # hold inputdatasetid values for WCSC Area of Occupancy maps - datasetsourceid = 1096
-        wcsc_range_data_list = []  # hold inputdatasetid values for WCSC range maps - datasetsourceid = 1097
-        cosewic_range_data_list = []  # hold inputdatasetid values for COSEWIC range maps - datasetsourceid = 1120
-        cosewic_eoo_data_list = []  # hold inputdatasetid values for COSEWIC Extent of Occupancy maps - dsid = 1121
+        filtered_inputdatasetid_list = []  # hold all inputdatasetid values for range/aoo/habitat maps
 
-        # Datasets/tables that need to exist in the map and not have active definition query
+        # Datasets and tables that need to exist in the map and not have active definition query
         dataset_list = ["InputPoint", "InputLine", "InputPolygon", "EO_Polygon"]
         table_list = [biotics_table, species_table, "InputDataset"]
 
@@ -482,9 +434,9 @@ class Tool:
 
             # # CHECK TO SEE IF THERE ARE RELATED INFRASPECIES RECORDS THAT NEED TO BE PROCESSED [SINGLE OUTPUT]....
 
-            """Use logic to select all infraspecies records for the full species by comparing and matching the 
+            """Use logic to select all infraspecies records for the full species by comparing and matching the
             element_code for the full species from Biotics table to the fullspecies_elementcode for the infraspecies
-            records in Species table. The initial selected record is a full species and the tool will process all 
+            records in Species table. The initial selected record is a full species and the tool will process all
             infraspecies into a single grouped output layer."""
 
             arcpy.AddMessage(u"\u200B")  # Unicode literal to create new line
@@ -507,7 +459,7 @@ class Tool:
 
             # del species_cursor, species_row  # delete some variables
 
-            """ This is where the processing happens to create the outputs in the Contents pane of the current map. 
+            """ This is where the processing happens to create the outputs in the Contents pane of the current map.
             DIFFERENT LOGIC IS IMPLEMENTED BASED ON THE IF/ELSE STATEMENT."""
 
             # Check to see if infraspecies exist by checking length of the speciesid_list
@@ -529,7 +481,7 @@ class Tool:
 
             # # USE FUNCTIONS TO CREATE GROUP LAYER AND POINTS/LINES/EOS LAYERS [FOR FULL SPECIES AND INFRASPECIES].
             # Create the group layer by calling the create_group_lyr() function
-            # Use french or english name depending on parameters
+            # Use French or english name depending on parameters
 
             # if the parameter to use french names is True, use french name
             if param_french_name:
@@ -547,109 +499,33 @@ class Tool:
                                                   sci_name,
                                                   infraspecies_exist)
 
+            # # CREATE OUTPUT LAYERS IN TOC FOR INPUT POINT/LINE and EO_POLYGON DATASETS............
             # Call the create_lyr() function x3 to create the point, lines & EO Layers
             Tool.create_lyr(m, group_lyr, speciesid_tuple, 'InputPoint', infraspecies_exist)
             Tool.create_lyr(m, group_lyr, speciesid_tuple, 'InputLine', infraspecies_exist)
             Tool.create_lyr(m, group_lyr, speciesid_tuple, 'EO_Polygon', infraspecies_exist)
 
-            # # CREATE LISTS OF INPUT DATASET ID VALUES FOR RANGE MAPS AND CRITICAL HABITAT DATASETS ...............
+            # # CREATE OUTPUT LAYERS IN TOC AND DATASETID LISTS FOR RANGE / AOO / HABITAT DATASETS ...............
+            # Iterate through the dictionary of filtered datasets
+            for key in dataset_dict:
+                myname = dataset_dict[key][0]   # Get the name of the dataset from the dictionary
+                myvalue = dataset_dict[key][1]  # Get the datasetsourceid value from the dictionary
+                arcpy.AddMessage("Processing: {}".format(myname))
 
-            # # GET LIST OF ECCC RANGE MAP DATASETS ----------------------------------------------------------------
-            # Search cursor to get the InputDatasetID values from InputDataset table for records where
-            # DatasetSourceID = 994 (i.e., DatasetSourceName = ECCC Range Maps)
-            with arcpy.da.SearchCursor("InputDataset",
-                                       inputdataset_fields,
-                                       "datasetsourceid = 994") as inputdataset_cursor:
-                for inputdataset_record in inputdataset_cursor:
-                    eccc_range_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
-                    eccc_range_map = "ECCCRangeMaps"
+                # Call the readFilteredInputDatasetID function for each of the datasets in the dictionary to generate
+                # a list of the inputdatasetid values for that dataset
+                id_values = KBAUtils.readFilteredInputDatasetID(myvalue)
+                # arcpy.AddMessage("InputDatasetIDs: {}".format(id_values))
 
-            # # GET LIST OF IUCN RANGE MAP DATASETS ---------------------------------------------------------------
-            # Search cursor to get the InputDatasetID values from InputDataset table for records where
-            # DatasetSourceID = 996 (i.e., DatasetSourceName = IUCN Range Maps)
-            with arcpy.da.SearchCursor("InputDataset",
-                                       inputdataset_fields,
-                                       "datasetsourceid = 996") as inputdataset_cursor:
-                for inputdataset_record in inputdataset_cursor:
-                    iucn_range_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
-                    iucc_range_map = "IUCNRangeMaps"
+                # Call the create_range_lyr() function to process each of the filtered datasets as separate outputs
+                Tool.create_range_lyr(m, group_lyr, speciesid_tuple, myname, id_values, infraspecies_exist)
 
-            # # GET LIST OF ECCC CRITICAL HABITAT DATASETS --------------------------------------------------------
-            # Search cursor to get the InputDatasetID values from InputDataset table for records where
-            # DatasetSourceID = 19 (i.e., DatasetSourceName = ECCC Critical Habitat)
-            with arcpy.da.SearchCursor("InputDataset",
-                                       inputdataset_fields,
-                                       "datasetsourceid = 19") as inputdataset_cursor:
-                for inputdataset_record in inputdataset_cursor:
-                    crit_habitat_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
-                    ecc_crit_habitat_map = "ECCCCriticalHabitatMaps"
+                # Create a merged list of the inputdatasetids for all the filtered datasets
+                filtered_inputdatasetid_list.extend((id_values))
 
-            # # GET LIST OF WCSC AREA OF OCCUPANCY MAP DATASETS --------------------------------------------------
-            # Search cursor to get the InputDatasetID values from InputDataset table for records where
-            # DatasetSourceID = 1096 (i.e., DatasetSourceName = WCSC Area of Occupancy Maps)
-            with arcpy.da.SearchCursor("InputDataset",
-                                       inputdataset_fields,
-                                       "datasetsourceid = 1096") as inputdataset_cursor:
-                for inputdataset_record in inputdataset_cursor:
-                    wcsc_aoo_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
-                    wcsc_aoo_map = "WCSCAOOMaps"
-
-            # # GET LIST OF WCSC RANGE MAP DATASETS --------------------------------------------------
-            # Search cursor to get the InputDatasetID values from InputDataset table for records where
-            # DatasetSourceID = 1097 (i.e., DatasetSourceName = WCSC Range Maps)
-            with arcpy.da.SearchCursor("InputDataset",
-                                       inputdataset_fields,
-                                       "datasetsourceid = 1097") as inputdataset_cursor:
-                for inputdataset_record in inputdataset_cursor:
-                    wcsc_range_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
-                    wcsc_range_map = "WCSCRangeMaps"
-
-            # # GET LIST OF COSEWIC RANGE MAP DATASETS --------------------------------------------------
-            # Search cursor to get the InputDatasetID values from InputDataset table for records where
-            # DatasetSourceID = 1120 (i.e., DatasetSourceName = COSEWIC Range Maps)
-            with arcpy.da.SearchCursor("InputDataset",
-                                       inputdataset_fields,
-                                       "datasetsourceid = 1120") as inputdataset_cursor:
-                for inputdataset_record in inputdataset_cursor:
-                    cosewic_range_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
-                    cosewic_range_map = "COSEWCICRangeMaps"
-
-            # # GET LIST OF COSEWIC EXTENT OF OCCURRENCE MAP DATASETS --------------------------------------------------
-            # Search cursor to get the InputDatasetID values from InputDataset table for records where
-            # DatasetSourceID = 1121 (i.e., DatasetSourceName = COSEWIC Extent of Occurrence Maps)
-            with arcpy.da.SearchCursor("InputDataset",
-                                       inputdataset_fields,
-                                       "datasetsourceid = 1121") as inputdataset_cursor:
-                for inputdataset_record in inputdataset_cursor:
-                    cosewic_eoo_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
-                    cosewic_eoo_map = "COSEWICEOOMaps"
-
-            del inputdataset_record, inputdataset_cursor
-
-            # Create a list of all the inputdatasetids that need to be filtered out of the InputPolygon layer
-            filtered_polygon_layers_list = eccc_range_data_list + iucn_range_data_list + crit_habitat_data_list + \
-                                           wcsc_aoo_data_list + wcsc_range_data_list + cosewic_range_data_list + \
-                                           cosewic_eoo_data_list
-
-            # # CREATE OUTPUT LAYERS IN TOC FOR INPUTPOLYGONS AND SEPARATE FILTERED DATASETS ............
-            # Call the function to create the InputPolygon layer w/out the datasets in the filtered_polygon_layers_list
-            Tool.create_poly_lyr(m, group_lyr, speciesid_tuple, filtered_polygon_layers_list, infraspecies_exist)
-
-            # Call the create_range_lyr() function x7 to process each of the filtered datasets as seperate outputs
-            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, eccc_range_map, eccc_range_data_list,
-                                  infraspecies_exist)
-            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, iucc_range_map, iucn_range_data_list,
-                                  infraspecies_exist)
-            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, ecc_crit_habitat_map, crit_habitat_data_list,
-                                  infraspecies_exist)
-            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, wcsc_aoo_map, wcsc_aoo_data_list,
-                                  infraspecies_exist)
-            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, wcsc_range_map, wcsc_range_data_list,
-                                  infraspecies_exist)
-            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, cosewic_range_map, cosewic_range_data_list,
-                                  infraspecies_exist)
-            Tool.create_range_lyr(m, group_lyr, speciesid_tuple, cosewic_eoo_map, cosewic_eoo_data_list,
-                                  infraspecies_exist)
+            # # CREATE OUTPUT LAYER IN TOC FOR THE INPUTPOLYGON DATASET W/OUT THE FILTERED DATASETS ............
+            # Call the function to create the InputPolygon layer w/out the filtered datasets
+            Tool.create_poly_lyr(m, group_lyr, speciesid_tuple, filtered_inputdatasetid_list, infraspecies_exist)
 
             m.clearSelection()  # clear all selections
 
