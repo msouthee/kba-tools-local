@@ -49,26 +49,6 @@ class ToolFullSpeciesMapping(object):
         self.canRunInBackground = False
 
     def getParameterInfo(self):
-        # """Define parameter definitions."""
-        # param_species = arcpy.Parameter(
-        #     displayName="Species Name:",
-        #     name="speciesnamestring",
-        #     datatype="GPString",
-        #     parameterType="Required",
-        #     direction="Input")
-        #
-        # # Create a search cursor to filter the values to show only full species names
-        # biotics_species_cursor = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
-        #                                                "national_scientific_name",
-        #                                                "ca_nname_level = 'Species'")
-        #
-        # # Set parameter filter to use a ValueList and populate the values from SearchCursor
-        # param_species.filter.type = "ValueList"
-        # param_species.filter.list = sorted([row[0] for row in biotics_species_cursor])
-        #
-        # params = [param_species]
-        # return params
-
         """Define parameter definitions."""
         param_species = arcpy.Parameter(
             displayName="Species Name:",
@@ -145,26 +125,6 @@ class ToolFullSpeciesScoping(object):
         self.category = "Exploratory Data Analysis"
 
     def getParameterInfo(self):
-        # """Define parameter definitions."""
-        # param_species = arcpy.Parameter(
-        #     displayName="Species Name:",
-        #     name="speciesnamestring",
-        #     datatype="GPString",
-        #     parameterType="Required",
-        #     direction="Input")
-        #
-        # # Create a search cursor to filter the values based on the full species names
-        # biotics_species_cursor = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
-        #                                               "national_scientific_name",
-        #                                               "ca_nname_level = 'Species'")
-        #
-        # # Set parameter filter to use a ValueList and populate the values from SearchCursor
-        # param_species.filter.type = "ValueList"
-        # param_species.filter.list = sorted([row[0] for row in biotics_species_cursor])
-        #
-        # params = [param_species]
-        # return params
-
         """Define parameter definitions."""
         param_species = arcpy.Parameter(
             displayName="Species Name:",
@@ -241,41 +201,6 @@ class ToolInfraspecies(object):
         self.canRunInBackground = False
 
     def getParameterInfo(self):
-        # """Define parameter definitions."""
-        # param_infraspecies = arcpy.Parameter(
-        #     displayName="Infraspecies Name:",
-        #     name="infraspeciesnamestring",
-        #     datatype="GPString",
-        #     parameterType="Required",
-        #     direction="Input")
-        #
-        # # Create a search cursor to filter the values to show only full species names
-        # biotics_infraspecies_cursor = arcpy.da.SearchCursor("BIOTICS_ELEMENT_NATIONAL",
-        #                                                     "national_scientific_name",
-        #                                                     "ca_nname_level <> 'Species'")
-        #
-        # # Set parameter filter to use a ValueList and populate the values from SearchCursor
-        # param_infraspecies.filter.type = "ValueList"
-        # param_infraspecies.filter.list = sorted([row[0] for row in biotics_infraspecies_cursor])
-        #
-        # ## CHANGE THIS PARAMETER TO A BOOLEAN
-        # # Yes/No parameter
-        # param_includefullspecies = arcpy.Parameter(
-        #     displayName='Do you want to process the full species too?',
-        #     name='includefullspecies',
-        #     datatype='GPString',
-        #     parameterType='Required',
-        #     direction='Input')
-        #
-        # # Filter list of available responses
-        # param_includefullspecies.filter.list = ["Yes", "No"]
-        #
-        # # Default selection
-        # param_includefullspecies.value = "No"
-        #
-        # params = [param_infraspecies, param_includefullspecies]
-        # return params
-
         """Define parameter definitions."""
         param_infraspecies = arcpy.Parameter(
             displayName="Infraspecies Name:",
@@ -337,17 +262,6 @@ class ToolInfraspecies(object):
         # Set parameter filter to use a ValueList and populate the values from SearchCursor
         param_infraspecies.filter.type = "ValueList"
         param_infraspecies.filter.list = sorted([row[0] for row in biotics_infraspecies_cursor])
-
-        # # Yes/No parameter
-        # param_includefullspecies = arcpy.Parameter(
-        #     displayName='Do you want to process the full species too?',
-        #     name='includefullspecies',
-        #     datatype='GPString',
-        #     parameterType='Required',
-        #     direction='Input')
-        #
-        # # Filter list of available responses
-        # param_includefullspecies.filter.list = ["Yes", "No"]
 
         return
 
