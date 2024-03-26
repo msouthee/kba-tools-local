@@ -3,6 +3,7 @@
 #
 # Script Created:   2022-02-15
 # Last Updated:     2022-04-26
+# Feature Request:  2024-03-25
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2022
 #
@@ -14,6 +15,14 @@
 #                   other InputPolygon records.
 #
 # Update:           Added the ability to choose to use the french species name instead of english species names.
+#
+# Feature Request:  Separate out the following datasets so that they have their own colours and are not included in the
+#                   InputPolygon Records:
+#                       WCSC Area of Occupancy Maps,
+#                       WCSC Range Maps,
+#                       COSEWIC Range Maps,
+#                       COSEWIC Extent of
+#                       Occurrence Maps.
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Import libraries
@@ -21,6 +30,7 @@ import arcpy
 import sys
 import traceback
 import KBAExceptions
+import KBAUtils
 
 
 # Define class called Tool
@@ -77,7 +87,7 @@ class Tool:
 
         # Naming convention for point/line/eo_polygon layers in TOC:
         # InputPoint_SpeciesID / InputLine_SpeciesID / EO_Polygon_SpeciesID
-        lyr_name = "{}_{}".format(ft_type, speciesid)
+        lyr_name = "{} {}".format(ft_type, speciesid)
 
         if len(m.listLayers(ft_type)) > 0:
             # Create a variable from the old/existing layer
@@ -115,13 +125,13 @@ class Tool:
         else:
             raise KBAExceptions.SpeciesDataError
 
-    # Define a function to create the InputPolygon layers (w/out range & critical habitat data)
+    # Define a function to create the InputPolygon layers (w/out the filtered data layers)
     def create_poly_lyr(m, grp_lyr, speciesid, range_data_list):
         # arcpy.AddMessage("Run create_poly_lyr function for InputPolygon.")
 
         # Naming convention for polygon layer in TOC:
         # InputPolygon_SpeciesID
-        lyr_name = "InputPolygon_{}".format(speciesid)
+        lyr_name = "InputPolygon {}".format(speciesid)
 
         if len(m.listLayers("InputPolygon")) > 0:
             lyr = m.listLayers("InputPolygon")[0]
@@ -158,23 +168,22 @@ class Tool:
         else:
             raise KBAExceptions.SpeciesDataError
 
-    # Define a function to create the ECCC range / IUCN range / ECCC critical habitat data layers
-    def create_range_lyr(m, grp_lyr, speciesid, range_type, range_data_list):
+    # Define a function to create the data layers for the filtered datasets [ECCC/IUCN/WCSC/COSEWIC MAPS]
+    def create_range_lyr(m, grp_lyr, speciesid, map_type, inputdatasetid_list):
         # arcpy.AddMessage("Run create_range_lyr function for {}.".format(range_type))
 
         # Naming convention for Range / Critical Habitat layers:
-        # ECCCRangeMaps_SpeciesID / IUCNRangeMaps_SpeciesID
-        lyr_name = "{}_{}".format(range_type, speciesid)
+        lyr_name = "{} {}".format(map_type, speciesid)
 
         # Check that the InputPolygon layer is loaded and that there are records in the range_data_list parameter
-        if len(m.listLayers("InputPolygon")) > 0 and len(range_data_list) > 0:
+        if len(m.listLayers("InputPolygon")) > 0 and len(inputdatasetid_list) > 0:
             lyr = m.listLayers("InputPolygon")[0]
 
             # Convert the range_data_list into string variable separated by commas for use in the SQL statement
-            range_data_string = ', '.join(str(i) for i in range_data_list)
+            inputdatasetid_list_as_string = ', '.join(str(i) for i in inputdatasetid_list)
 
             # SQL statement to select InputPolygons for the species and Range / Critical Habitat data only
-            range_sql = "speciesid = {} And inputdatasetid IN ({})".format(speciesid, range_data_string)
+            range_sql = "speciesid = {} And inputdatasetid IN ({})".format(speciesid, inputdatasetid_list_as_string)
 
             # Make a new feature layer with sql query and added .getOutput(0) function
             new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, range_sql,
@@ -189,23 +198,10 @@ class Tool:
                 new_lyr = m.listLayers(lyr_name)[0]
                 new_lyr.visible = False  # Turn off the visibility for the new layer
 
-                if range_type == "ECCCRangeMaps":
-                    # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
-                    sym = new_lyr.symbology
-                    sym.renderer.symbol.applySymbolFromGallery("ECCC Range Map")
-                    new_lyr.symbology = sym
-
-                elif range_type == "IUCNRangeMaps":
-                    # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
-                    sym = new_lyr.symbology
-                    sym.renderer.symbol.applySymbolFromGallery("IUCN Range Map")
-                    new_lyr.symbology = sym
-
-                else:
-                    # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
-                    sym = new_lyr.symbology
-                    sym.renderer.symbol.applySymbolFromGallery("ECCC Critical Habitat")
-                    new_lyr.symbology = sym
+                # Draw the symbology based on the name of the dataset called
+                sym = new_lyr.symbology
+                sym.renderer.symbol.applySymbolFromGallery(map_type)  # based on the parameter that is fed into function
+                new_lyr.symbology = sym
 
             else:
                 pass  # Do nothing
@@ -246,14 +242,11 @@ class Tool:
                           "national_engl_name",
                           "national_fr_name"]  # Added french species names
 
-        # Fields in InputDataset that are used in the search cursor
-        inputdataset_fields = ["inputdatasetid",
-                               "datasetsourceid"]
+        # Load dictionary of filtered datasets (i.e., Range/AOO/EOO maps) and corresponding datasetsourceid values
+        dataset_dict = KBAUtils.filtered_data_dict
 
         # Empty lists to hold data values
-        eccc_range_data_list = []  # hold inputdatasetid values for ECCC range maps
-        iucn_range_data_list = []  # hold inputdatasetid values for IUCN range maps
-        crit_habitat_data_list = []  # hold inputdatasetid values for ECCC critical habitat
+        filtered_inputdatasetid_list = []  # hold all inputdatasetid values for range/aoo/habitat maps
 
         # Datasets/tables that need to exist in the map and not have active definition query
         dataset_list = ["InputPoint", "InputLine", "InputPolygon", "EO_Polygon"]
@@ -432,51 +425,27 @@ class Tool:
             Tool.create_lyr(m, primary_infraspecies_group_lyr, speciesid, 'InputLine')
             Tool.create_lyr(m, primary_infraspecies_group_lyr, speciesid, 'EO_Polygon')
 
-            # # CREATE LISTS OF INPUT DATASET ID VALUES FOR RANGE MAPS AND CRITICAL HABITAT DATASETS ...............
+            # # CREATE OUTPUT LAYERS IN TOC AND LIST OF DATASETIDS FOR RANGE / AOO / HABITAT DATASETS ...............
+            # Iterate through the dictionary of filtered datasets
+            for key in dataset_dict:
+                myname = dataset_dict[key][0]  # Get the name of the dataset from the dictionary
+                myvalue = dataset_dict[key][1]  # Get the datasetsourceid value from the dictionary
+                arcpy.AddMessage("Processing: {}".format(myname))
 
-            # # GET LIST OF ECCC RANGE MAP DATASETS ----------------------------------------------------------------
-            # Search cursor to get the InputDatasetID values from InputDataset table for records where
-            # DatasetSourceID = 994 (i.e., DatasetSourceName = ECCC Range Maps)
-            with arcpy.da.SearchCursor("InputDataset",
-                                       inputdataset_fields,
-                                       "datasetsourceid = 994") as inputdataset_cursor:
-                for inputdataset_record in inputdataset_cursor:
-                    eccc_range_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
+                # Call the readFilteredInputDatasetID function for each of the datasets in the dictionary to generate
+                # a list of the inputdatasetid values for that dataset
+                id_values = KBAUtils.readFilteredInputDatasetID(myvalue)
+                # arcpy.AddMessage("InputDatasetIDs: {}".format(id_values))
 
-            # # GET LIST OF IUCN RANGE MAP DATASETS ---------------------------------------------------------------
-            # Search cursor to get the InputDatasetID values from InputDataset table for records where
-            # DatasetSourceID = 996 (i.e., DatasetSourceName = IUCN Range Maps)
-            with arcpy.da.SearchCursor("InputDataset",
-                                       inputdataset_fields,
-                                       "datasetsourceid = 996") as inputdataset_cursor:
-                for inputdataset_record in inputdataset_cursor:
-                    iucn_range_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
+                # Call the create_range_lyr() function to process each of the filtered datasets as separate outputs
+                Tool.create_range_lyr(m, primary_infraspecies_group_lyr, speciesid, myname, id_values)
 
-            # # GET LIST OF ECCC CRITICAL HABITAT DATASETS --------------------------------------------------------
-            # Search cursor to get the InputDatasetID values from InputDataset table for records where
-            # DatasetSourceID = 19 (i.e., DatasetSourceName = ECCC Critical Habitat)
-            with arcpy.da.SearchCursor("InputDataset",
-                                       inputdataset_fields,
-                                       "datasetsourceid = 19") as inputdataset_cursor:
-                for inputdataset_record in inputdataset_cursor:
-                    crit_habitat_data_list.append(inputdataset_record[0])  # Append inputdatasetid values
+                # Create a merged list of the inputdatasetids for all the filtered datasets
+                filtered_inputdatasetid_list.extend((id_values))
 
-            del inputdataset_record, inputdataset_cursor
-
-            # Create a list of all the datasets that are Range or Critical Habitat datasets
-            range_and_crit_habitat_list = eccc_range_data_list + iucn_range_data_list + crit_habitat_data_list
-
-            # # CREATE OUTPUT LAYERS IN TOC FOR INPUTPOLYGONS, RANGE MAPS AND CRITICAL HABITAT DATASETS ............
-            # Call the function to create the InputPolygon layer w/out Range / Critical Habitat data
-            Tool.create_poly_lyr(m, primary_infraspecies_group_lyr, speciesid, range_and_crit_habitat_list)
-
-            # Call the create_range_lyr() function x3 to process the range maps and critical habitat data
-            Tool.create_range_lyr(m, primary_infraspecies_group_lyr, speciesid, "ECCCRangeMaps",
-                                  eccc_range_data_list)
-            Tool.create_range_lyr(m, primary_infraspecies_group_lyr, speciesid, "IUCNRangeMaps",
-                                  iucn_range_data_list)
-            Tool.create_range_lyr(m, primary_infraspecies_group_lyr, speciesid, "ECCCCriticalHabitat",
-                                  crit_habitat_data_list)
+            # # CREATE OUTPUT LAYER IN TOC FOR THE INPUTPOLYGON DATASET W/OUT THE FILTERED DATASETS ............
+            # Call the function to create the InputPolygon layer w/out the filtered datasets
+            Tool.create_poly_lyr(m, primary_infraspecies_group_lyr, speciesid, filtered_inputdatasetid_list)
 
             # Check to see if there are data layers in the infrapecies group layer, if empty delete it
             if len(primary_infraspecies_group_lyr.listLayers()) > 0:
@@ -557,14 +526,27 @@ class Tool:
                 Tool.create_lyr(m, full_species_group_lyr, full_speciesid, 'InputLine')
                 Tool.create_lyr(m, full_species_group_lyr, full_speciesid, 'EO_Polygon')
 
-                # Call the function to create the InputPolygon layer w/out Range & Critical Habitat data
-                Tool.create_poly_lyr(m, full_species_group_lyr, full_speciesid, range_and_crit_habitat_list)
+                # # CREATE OUTPUT LAYERS IN TOC AND LIST OF DATASETIDS FOR RANGE / AOO / HABITAT DATASETS ............
+                # Iterate through the dictionary of filtered datasets
+                for key in dataset_dict:
+                    myname = dataset_dict[key][0]  # Get the name of the dataset from the dictionary
+                    myvalue = dataset_dict[key][1]  # Get the datasetsourceid value from the dictionary
+                    arcpy.AddMessage("Processing: {}".format(myname))
 
-                # # Call the create_range_lyr() function x3 for range maps and critical habitat data
-                Tool.create_range_lyr(m, full_species_group_lyr, full_speciesid, "ECCCRangeMaps", eccc_range_data_list)
-                Tool.create_range_lyr(m, full_species_group_lyr, full_speciesid, "IUCNRangeMaps", iucn_range_data_list)
-                Tool.create_range_lyr(m, full_species_group_lyr, full_speciesid, "ECCCCriticalHabitat",
-                                      crit_habitat_data_list)
+                    # Call the readFilteredInputDatasetID function for each of the datasets in the dictionary
+                    # to create a list of the inputdatasetid values for that dataset
+                    id_values = KBAUtils.readFilteredInputDatasetID(myvalue)
+                    # arcpy.AddMessage("InputDatasetIDs: {}".format(id_values))
+
+                    # Call the create_range_lyr() function to process each of the filtered datasets as separate outputs
+                    Tool.create_range_lyr(m, full_species_group_lyr, full_speciesid, myname, id_values)
+
+                    # Create a merged list of the inputdatasetids for all the filtered datasets
+                    filtered_inputdatasetid_list.extend((id_values))
+
+                # # CREATE OUTPUT LAYER IN TOC FOR THE INPUTPOLYGON DATASET W/OUT THE FILTERED DATASETS ............
+                # Call the function to create the InputPolygon layer w/out the filtered datasets
+                Tool.create_poly_lyr(m, full_species_group_lyr, full_speciesid, filtered_inputdatasetid_list)
 
                 # Check to see if there are data layers in the full species group layer, if empty delete it
                 if len(full_species_group_lyr.listLayers()) > 0:
