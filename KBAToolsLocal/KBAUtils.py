@@ -7,7 +7,14 @@
 # Import libraries
 import arcpy
 
-# Dictionary of the Range/AOO/Habitat Maps with callable dataset/symbology name and unique datasetsourceid value
+# VARIABLES FOR KBATOOLSLOCAL
+
+""" Dictionary of datasets that need to be filtered out of the InputPolygons dataset. 
+The dictionary has two callable values: the dataset name and the unique datasetsourceid value.  The dataset name
+is used to print the name in the table of contents in ArcGIS Pro when generating the output layers.  The dataset name is
+also used to display the correct symbology from the shared project symbology file that is published to the portal.
+The unique datasetsourceid value is used to generate the list of inputdatasetid values in the InputDataset table that
+correspond to the features for the filtered data type."""
 filtered_data_dict = {"ECCCRangeMaps": ["ECCC Range Map", "994"],
                       "IUCNRangeMaps": ["IUCN Range Map", "996"],
                       "ECCCCriticalHabitatMaps": ["ECCC Critical Habitat", "19"],
@@ -16,6 +23,8 @@ filtered_data_dict = {"ECCCRangeMaps": ["ECCC Range Map", "994"],
                       "COSEWCICRangeMaps": ["COSEWIC Range Map", "1120"],
                       "COSEWICEOOMaps": ["COSEWIC EOO Map", "1121"]}
 
+
+# FUNCTIONS FOR KBATOOLSLOCAL
 
 def readFilteredInputDatasetID(key_value):
     """Return the inputdatasetid values based on the unique datasetsourceid value for each filtered dataset"""
