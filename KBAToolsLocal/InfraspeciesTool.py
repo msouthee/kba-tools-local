@@ -1,28 +1,23 @@
 # ----------------------------------------------------------------------------------------------------------------------
-# Script Name:      InfraspeciesTool.py         "INFRASPECIES TOOL" [SEPARATE GROUP LAYERS]
+# Script Name:      InfraspeciesTool.py         "MAPPING TOOL - INFRASPECIES" [SEPARATE GROUP LAYERS]
 #
 # Script Created:   2022-02-15
-# Last Updated:     2022-04-26
-# Feature Request:  2024-03-25
+# Last Updated:     2024-03-27
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2022
 #
-# Purpose:          Adds output data layers to a map for the selected infraspecies, and adds a separate group layer for
-#                   the full (parent) species if the user wants to process the full species.
+# Purpose:          Adds output data layers to a map for the selected infraspecies.
+#                   [Optional] Adds separate group layers for the full (parent) species.
 #                   Uses different naming logic for the infraspecies and full species group layers.
 #                   Creates separate output data layers for each species ID value.
 #                   Contains logic to handle ECCC Range Maps, ECCC Critical Habitat & IUCN Range Maps separately from
 #                   other InputPolygon records.
 #
-# Update:           Added the ability to choose to use the french species name instead of english species names.
-#
-# Feature Request:  Separate out the following datasets so that they have their own colours and are not included in the
-#                   InputPolygon Records:
-#                       WCSC Area of Occupancy Maps,
-#                       WCSC Range Maps,
-#                       COSEWIC Range Maps,
-#                       COSEWIC Extent of
-#                       Occurrence Maps.
+# Updates:
+# 2022-04-26        Added the ability to choose to use the French species name instead of english species names.
+# 2024-03-35        Added functionality to separate four additional datasets from the InputPolygon layer using a data
+#                   dictionary. The datasets display as their own output layers in the map with custom symbology.
+#                   WCSC Area of Occupancy Maps, WCSC Range Maps, COSEWIC Range Maps, COSEWIC Extent of Occurrence Maps.
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Import libraries
