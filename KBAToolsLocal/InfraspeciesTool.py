@@ -1,5 +1,7 @@
 # ----------------------------------------------------------------------------------------------------------------------
-# Script Name:      InfraspeciesTool.py         "MAPPING TOOL - INFRASPECIES" [SEPARATE GROUP LAYERS]
+# Script Name:      InfraspeciesTool.py
+# Tool Location:    KBAToolsLocal Toolbox
+# Tool Name:        "Mapping Tool - Infraspecies" [SEPARATE GROUP LAYERS]
 #
 # Script Created:   2022-02-15
 # Last Updated:     2024-03-27
@@ -81,7 +83,6 @@ class Tool:
         # arcpy.AddMessage("Run create_lyr function for {}.".format(ft_type))
 
         # Naming convention for point/line/eo_polygon layers in TOC:
-        # InputPoint_SpeciesID / InputLine_SpeciesID / EO_Polygon_SpeciesID
         lyr_name = "{} {}".format(ft_type, speciesid)
 
         if len(m.listLayers(ft_type)) > 0:
@@ -125,7 +126,6 @@ class Tool:
         # arcpy.AddMessage("Run create_poly_lyr function for InputPolygon.")
 
         # Naming convention for polygon layer in TOC:
-        # InputPolygon_SpeciesID
         lyr_name = "InputPolygon {}".format(speciesid)
 
         if len(m.listLayers("InputPolygon")) > 0:
@@ -167,17 +167,17 @@ class Tool:
     def create_range_lyr(m, grp_lyr, speciesid, map_type, inputdatasetid_list):
         # arcpy.AddMessage("Run create_range_lyr function for {}.".format(range_type))
 
-        # Naming convention for Range / Critical Habitat layers:
+        # Naming convention for Range/AOO/Critical Habitat output layers:
         lyr_name = "{} {}".format(map_type, speciesid)
 
-        # Check that the InputPolygon layer is loaded and that there are records in the range_data_list parameter
+        # Check that the InputPolygon layer is loaded and that there are records in the inputdatasetid_list parameter
         if len(m.listLayers("InputPolygon")) > 0 and len(inputdatasetid_list) > 0:
             lyr = m.listLayers("InputPolygon")[0]
 
-            # Convert the range_data_list into string variable separated by commas for use in the SQL statement
+            # Convert the inputdatasetid_list into string variable separated by commas for use in the SQL statement
             inputdatasetid_list_as_string = ', '.join(str(i) for i in inputdatasetid_list)
 
-            # SQL statement to select InputPolygons for the species and Range / Critical Habitat data only
+            # SQL statement to select InputPolygons for the species and filtered data only
             range_sql = "speciesid = {} And inputdatasetid IN ({})".format(speciesid, inputdatasetid_list_as_string)
 
             # Make a new feature layer with sql query and added .getOutput(0) function
@@ -187,13 +187,13 @@ class Tool:
             # Get a count of the records in the new feature layer
             row_count = int(arcpy.GetCount_management(new_lyr).getOutput(0))
 
-            # Check to see if there are any records for the species and the Range / Critical Habitat type
+            # Check to see if there are any records for the species for the filtered dataset type
             if row_count != 0:
-                m.addLayerToGroup(grp_lyr, new_lyr, "BOTTOM")  # Add the new range / critical habitat layer
+                m.addLayerToGroup(grp_lyr, new_lyr, "BOTTOM")  # Add the new filtered data layer to the map
                 new_lyr = m.listLayers(lyr_name)[0]
                 new_lyr.visible = False  # Turn off the visibility for the new layer
 
-                # Draw the symbology based on the name of the dataset called
+                # Draw the symbology based on the current filtered dataset
                 sym = new_lyr.symbology
                 sym.renderer.symbol.applySymbolFromGallery(map_type)  # based on the parameter that is fed into function
                 new_lyr.symbology = sym
@@ -386,7 +386,7 @@ class Tool:
             # If param_french_name is True, then check if fr_name exists, if None then use en_name
             if param_french_name and not fr_name:
                 arcpy.AddMessage("There is no french name for this species. Revert to using english name.")
-                # Set the french name parameter to False
+                # Set the French name parameter to False
                 param_french_name = False
 
             else:
@@ -399,16 +399,16 @@ class Tool:
 
             # # USE FUNCTIONS TO CREATE GROUP LAYER AND POINTS/LINES/EOS LAYERS [FOR INFRASPECIES] ...................
             # Create the group layer by calling the create_infraspecies_group_lyr() function defined in the tool
-            # Use french or english name depending on parameters
+            # Use French or english name depending on parameters
 
-            # if the parameter to use french names is True, use french name
+            # if the parameter to use French names is True, use French name
             if param_french_name:
                 primary_infraspecies_group_lyr = Tool.create_infraspecies_group_lyr(m,
                                                                                     new_group_lyr,
                                                                                     fr_name,
                                                                                     sci_name)
 
-            # if the parameter to use french names is False or None, use english name
+            # if the parameter to use French names is False or None, use english name
             else:
                 primary_infraspecies_group_lyr = Tool.create_infraspecies_group_lyr(m,
                                                                                     new_group_lyr,
@@ -436,7 +436,7 @@ class Tool:
                 Tool.create_range_lyr(m, primary_infraspecies_group_lyr, speciesid, myname, id_values)
 
                 # Create a merged list of the inputdatasetids for all the filtered datasets
-                filtered_inputdatasetid_list.extend((id_values))
+                filtered_inputdatasetid_list.extend(id_values)
 
             # # CREATE OUTPUT LAYER IN TOC FOR THE INPUTPOLYGON DATASET W/OUT THE FILTERED DATASETS ............
             # Call the function to create the InputPolygon layer w/out the filtered datasets
@@ -500,7 +500,7 @@ class Tool:
                 # Create the species group layer using the create_optional_species_group_lyr function
                 # Use french or english name depending on parameters
 
-                # if the parameter to use french names is True, use french name
+                # if the parameter to use French names is True, use French name
                 if param_french_name:
                     full_species_group_lyr = Tool.create_optional_species_group_lyr(m,
                                                                                     new_group_lyr,
@@ -508,7 +508,7 @@ class Tool:
                                                                                     sci_name,
                                                                                     primary_infraspecies_group_lyr)
 
-                # if the parameter to use french names is False or None, use english name
+                # if the parameter to use French names is False or None, use english name
                 else:
                     full_species_group_lyr = Tool.create_optional_species_group_lyr(m,
                                                                                     new_group_lyr,
@@ -537,7 +537,7 @@ class Tool:
                     Tool.create_range_lyr(m, full_species_group_lyr, full_speciesid, myname, id_values)
 
                     # Create a merged list of the inputdatasetids for all the filtered datasets
-                    filtered_inputdatasetid_list.extend((id_values))
+                    filtered_inputdatasetid_list.extend(id_values)
 
                 # # CREATE OUTPUT LAYER IN TOC FOR THE INPUTPOLYGON DATASET W/OUT THE FILTERED DATASETS ............
                 # Call the function to create the InputPolygon layer w/out the filtered datasets

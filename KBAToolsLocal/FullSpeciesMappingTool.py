@@ -1,5 +1,7 @@
 # ----------------------------------------------------------------------------------------------------------------------
-# Script Name:      FullSpeciesMappingTool.py      "MAPPING TOOL - SPECIES" [SINGLE GROUP LAYER]
+# Script Name:      FullSpeciesMappingTool.py
+# Tool Location:    KBAToolsLocal Toolbox
+# Tool Name:        "Mapping Tool - Species" [SINGLE GROUP LAYER]
 #
 # Script Created:   2022-01-05
 # Last Updated:     2024-03-27
@@ -21,12 +23,10 @@
 #                   WCSC Area of Occupancy Maps, WCSC Range Maps, COSEWIC Range Maps, COSEWIC Extent of Occurrence Maps.
 # ----------------------------------------------------------------------------------------------------------------------
 
-import sys
-import traceback
-
 # Import libraries
 import arcpy
-
+import sys
+import traceback
 import KBAExceptions
 import KBAUtils
 
@@ -39,8 +39,7 @@ class Tool:
     def __init__(self):
         pass
 
-    """These functions are called from within the run_tool function. The first parameter should be self, 
-    but I don't understand how to get this to work properly."""
+    """These functions are called from within the run_tool function."""
 
     # Define a function to create the group layer for a selected record & its infraspecies
     def create_group_lyr(m, grp_lyr, sp_com_name, sp_sci_name, infra_exists):
@@ -77,24 +76,24 @@ class Tool:
             # Create a variable from the old/existing layer
             lyr = m.listLayers(ft_type)[0]
 
-            # Assign naming conventions & sql query based on value of infra parameter:
+            # Assign naming conventions & sql query based on value of infraspecies parameter:
             if infra_exists is True:
-                # InputPoint_SpeciesID+ / InputLine_SpeciesID+ / EO_Polygon_SpeciesID+
-                lyr_name = "{} {}+".format(ft_type, speciesid_tuple[0])  # the original speciesID
+                # Specify naming conventions to include infraspecies
+                lyr_name = "{} {}+".format(ft_type, speciesid_tuple[0])
 
-                # select all speciesid values in the tuple
+                # select all speciesid values in the tuple, i.e. full species and infraspecies
                 sql_query = "speciesid IN {}".format(speciesid_tuple)
 
             else:
-                # InputPoint_SpeciesID / InputLine_SpeciesID / EO_Polygon_SpeciesID
-                lyr_name = "{} {}".format(ft_type, speciesid_tuple[0])  # the original speciesID
+                # Specify naming conventions without infraspecies
+                lyr_name = "{} {}".format(ft_type, speciesid_tuple[0])
 
-                # select only the original species id
-                sql_query = "speciesid = {}".format(speciesid_tuple[0])  # the original speciesID
+                # select only the original species id, i.e. full species
+                sql_query = "speciesid = {}".format(speciesid_tuple[0])
 
             # arcpy.AddMessage(sql_query)
 
-            # Make a new feature layer with sql query and added .getOutput(0) function
+            # Make a new feature layer based on the sql query and added .getOutput(0) function
             new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, sql_query,
                                                         None).getOutput(0)
 
@@ -136,20 +135,20 @@ class Tool:
             # Convert the filtered inputdatasetid_list into a string separated by commas for use in the SQL statement
             inputdatasetid_list_as_string = ', '.join(str(i) for i in inputdatasetid_list)
 
-            # Assign naming conventions for polygon layer in TOC & sql query based on infra parameter:
+            # Assign naming conventions for polygon layer in TOC & create sql query based on infraspecies parameter:
             if infra_exists is True:
-                # Naming convention: InputPolygon_SpeciesID+
+                # Specify naming conventions to include infraspecies
                 lyr_name = "InputPolygon {}+".format(speciesid_tuple[0])
 
-                # SQL statement to select InputPolygons for the species w/out the filtered data records
+                # SQL statement to select InputPolygons for the species and infraspecies w/out the filtered data records
                 range_sql = "speciesid IN {} And inputdatasetid NOT IN ({})".format(speciesid_tuple,
                                                                                     inputdatasetid_list_as_string)
 
             else:
-                # Naming convention: InputPolygon_SpeciesID
+                # Specify naming conventions without infraspecies
                 lyr_name = "InputPolygon {}".format(speciesid_tuple[0])
 
-                # SQL statement to select InputPolygons for the species w/out filtered data records
+                # SQL statement to select InputPolygons for the full species w/out filtered data records
                 range_sql = "speciesid = {} And inputdatasetid NOT IN ({})".format(speciesid_tuple[0],
                                                                                    inputdatasetid_list_as_string)
 
@@ -185,16 +184,16 @@ class Tool:
     def create_range_lyr(m, grp_lyr, speciesid_tuple, map_type, inputdatasetid_list, infra_exists):
         # arcpy.AddMessage("Run create_range_lyr function for {}.".format(range_type))
 
-        # Check that the InputPolygon layer is loaded and that there are records in the range_data_list parameter
+        # Check that the InputPolygon layer is loaded and that there are data records for the species
         if len(m.listLayers("InputPolygon")) > 0 and len(inputdatasetid_list) > 0:
             lyr = m.listLayers("InputPolygon")[0]
 
-            # Convert the range_data_list into string variable separated by commas for use in the SQL statement
+            # Convert the inputdatasetid_list into string variable separated by commas for use in the SQL statement
             inputdatasetid_list_as_string = ', '.join(str(i) for i in inputdatasetid_list)
 
             # Assign naming convention in TOC based on infra parameter:
             if infra_exists is True:
-                # Specify naming conventions
+                # Specify naming conventions to include infraspecies
                 lyr_name = "{} {}+".format(map_type, speciesid_tuple[0])
 
                 # SQL statement to select filtered InputPolygons for the species and correct dataset
@@ -202,7 +201,7 @@ class Tool:
                                                                                 inputdatasetid_list_as_string)
 
             else:
-                # Specify naming conventions
+                # Specify naming conventions without infraspecies
                 lyr_name = "{} {}".format(map_type, speciesid_tuple[0])
 
                 # SQL statement to select filtered InputPolygons for the species and correct dataset
@@ -224,9 +223,9 @@ class Tool:
                 new_lyr = m.listLayers(lyr_name)[0]
                 new_lyr.visible = False  # Turn off the visibility for the new layer
 
-                # Draw the symbology based on the name of the dataset called
+                # Draw the symbology based on the name of the dataset called from the dictionary
                 sym = new_lyr.symbology
-                sym.renderer.symbol.applySymbolFromGallery(map_type)  # based on the parameter that is fed into function
+                sym.renderer.symbol.applySymbolFromGallery(map_type)  # map_type parameter is fed into function
                 new_lyr.symbology = sym
 
             else:
@@ -250,7 +249,7 @@ class Tool:
         arcpy.AddMessage("Use French Name: {}".format(param_french_name))
         # arcpy.AddMessage(type(param_french_name))
 
-        # Create an sql query based on the species parameter
+        # sql query based on the species parameter
         sql = "national_scientific_name = '{}'".format(param_species)
 
         # Tables
@@ -500,7 +499,7 @@ class Tool:
             Tool.create_lyr(m, group_lyr, speciesid_tuple, 'InputLine', infraspecies_exist)
             Tool.create_lyr(m, group_lyr, speciesid_tuple, 'EO_Polygon', infraspecies_exist)
 
-            # # CREATE OUTPUT LAYERS IN TOC AND LIST OF DATASETIDS FOR RANGE / AOO / HABITAT DATASETS ...............
+            # # CREATE OUTPUT LAYERS IN TOC AND LIST OF INPUTDATASETIDS FOR RANGE / AOO / HABITAT DATASETS .............
             # Iterate through the dictionary of filtered datasets
             for key in dataset_dict:
                 myname = dataset_dict[key][0]   # Get the name of the dataset from the dictionary
@@ -516,7 +515,7 @@ class Tool:
                 Tool.create_range_lyr(m, group_lyr, speciesid_tuple, myname, id_values, infraspecies_exist)
 
                 # Create a merged list of the inputdatasetids for all the filtered datasets
-                filtered_inputdatasetid_list.extend((id_values))
+                filtered_inputdatasetid_list.extend(id_values)
 
             # # CREATE OUTPUT LAYER IN TOC FOR THE INPUTPOLYGON DATASET W/OUT THE FILTERED DATASETS ............
             # Call the function to create the InputPolygon layer w/out the filtered datasets

@@ -1,5 +1,7 @@
 # ----------------------------------------------------------------------------------------------------------------------
-# Script Name:      FullSpeciesScopingTool.py      "SCOPING TOOL FOR FULL SPECIES" [SEPARATE GROUP LAYERS]
+# Script Name:      FullSpeciesScopingTool.py
+# Tool Location:    KBAToolsLocal Toolbox >>> Exploratory Data Analysis Toolkit
+# Tool Name:        "Exploratory Tool - Species & Infraspecies" [SEPARATE GROUP LAYERS]
 #
 # Script Created:   2022-02-10
 # Last Updated:     2024-03-27
@@ -85,7 +87,6 @@ class Tool:
         # arcpy.AddMessage("Run create_lyr function for {}.".format(ft_type))
 
         # Naming convention for point/line/eo_polygon layers in TOC:
-        # InputPoint_SpeciesID / InputLine_SpeciesID / EO_Polygon_SpeciesID
         lyr_name = "{} {}".format(ft_type, speciesid)
 
         if len(m.listLayers(ft_type)) > 0:
@@ -125,21 +126,20 @@ class Tool:
             raise KBAExceptions.SpeciesDataError
 
     # Define a function to create the InputPolygon layers (w/out the filtered data layers)
-    def create_poly_lyr(m, grp_lyr, speciesid, range_data_list):
+    def create_poly_lyr(m, grp_lyr, speciesid, inputdatasetid_list):
         # arcpy.AddMessage("Run create_poly_lyr function for InputPolygon.")
 
         # Naming convention for polygon layer in TOC:
-        # InputPolygon_SpeciesID
         lyr_name = "InputPolygon {}".format(speciesid)
 
         if len(m.listLayers("InputPolygon")) > 0:
             lyr = m.listLayers("InputPolygon")[0]
 
             # Convert the range_data_list into string variable separated by commas for use in the SQL statement
-            range_data_string = ', '.join(str(i) for i in range_data_list)
+            inputdatasetid_list_as_string = ', '.join(str(i) for i in inputdatasetid_list)
 
-            # SQL statement to select InputPolygons for the species w/out Range & Critical Habitat data records
-            range_sql = "speciesid = {} And inputdatasetid NOT IN ({})".format(speciesid, range_data_string)
+            # SQL statement to select InputPolygons for the species w/out filtered data records
+            range_sql = "speciesid = {} And inputdatasetid NOT IN ({})".format(speciesid, inputdatasetid_list_as_string)
 
             # Make a new feature layer with sql query and added .getOutput(0) function
             new_lyr = arcpy.MakeFeatureLayer_management(lyr, lyr_name, range_sql,
@@ -171,7 +171,7 @@ class Tool:
     def create_range_lyr(m, grp_lyr, speciesid, map_type, inputdatasetid_list):
         # arcpy.AddMessage("Run create_range_lyr function for {}.".format(range_type))
 
-        # Naming convention for filtered layers
+        # Naming convention for output datasets for the filtered data layers
         lyr_name = "{} {}".format(map_type, speciesid)
 
         # Check that the InputPolygon layer is loaded and that there are records in the value list
@@ -476,7 +476,7 @@ class Tool:
                 Tool.create_range_lyr(m, species_group_lyr, speciesid, myname, id_values)
 
                 # Create a merged list of the inputdatasetids for all the filtered datasets
-                filtered_inputdatasetid_list.extend((id_values))
+                filtered_inputdatasetid_list.extend(id_values)
 
             # # CREATE OUTPUT LAYER IN TOC FOR THE INPUTPOLYGON DATASET W/OUT THE FILTERED DATASETS ............
             # Call the function to create the InputPolygon layer w/out the filtered datasets
@@ -559,7 +559,7 @@ class Tool:
                                 Tool.create_range_lyr(m, infra_group_lyr, infraspeciesid, myname, id_values)
 
                                 # Create a merged list of the inputdatasetids for all the filtered datasets
-                                filtered_inputdatasetid_list.extend((id_values))
+                                filtered_inputdatasetid_list.extend(id_values)
 
                             # # CREATE OUTPUT LAYER IN TOC FOR THE INPUTPOLYGON DATASET W/OUT THE FILTERED DATASETS ..
                             # Call the function to create the InputPolygon layer w/out Range & Critical Habitat data
