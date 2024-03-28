@@ -4,7 +4,7 @@
 # Tool Name:        "Mapping Tool - Species" [SINGLE GROUP LAYER]
 #
 # Script Created:   2022-01-05
-# Last Updated:     2024-03-27
+# Last Updated:     2024-03-28
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
@@ -372,31 +372,6 @@ class Tool:
 
                 else:
                     raise KBAExceptions.NoTableError
-
-            # """Error handling to check for existence of required symbology for new data layers.."""
-            # lyr = m.listLayers("InputPolygon")[0]
-            # sym = lyr.symbology  # Access symbol parameters in arcpy
-            #
-            # counter = 0
-            # condition = False
-            # sym_list = sym.renderer.symbol.listSymbolsFromGallery("")  # List of all symbols in the project gallery
-            #
-            # # While statement to run through the entire sym_list and try to find the custom Input Polygon symbol
-            # while not condition:
-            #     current_name = sym_list[counter].name  # Get the name of the current symbol
-            #     if current_name == "Input Polygon":
-            #         condition = True  # exit the while loop after processing the statements in this clause
-            #         arcpy.AddMessage("Custom WCSC-KBA-Symbology found.")
-            #
-            #         # Update symbology for the InputPolygon layer in the SpeciesData group layer
-            #         sym.renderer.symbol.applySymbolFromGallery("Input Polygon")
-            #         lyr.symbology = sym
-            #
-            #     else:
-            #         counter += 1  # increase the counter to move to the next item in the list
-            #         if counter == len(sym_list):  # you have reached the end of the list and not found the desired sym
-            #             condition = True
-            #             raise KBAExceptions.SymbologyError
 
             # # END ERROR HANDLING .....................................................................................
 

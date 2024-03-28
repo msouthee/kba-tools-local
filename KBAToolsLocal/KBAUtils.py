@@ -31,8 +31,8 @@ symbology_dict = {"ECCCRangeMaps":
                   "COSEWICEOOMaps":
                       ["COSEWIC EOO Map", "1121", {'RGB': [2, 172, 158, 30]}, {'RGB': [2, 172, 158, 100]}]}
 
-# FUNCTIONS FOR KBATOOLSLOCAL
 
+# FUNCTIONS FOR KBATOOLSLOCAL
 def readFilteredInputDatasetID(key_value):
     """Return the inputdatasetid values based on the unique datasetsourceid value for each filtered dataset"""
     datasetids = []

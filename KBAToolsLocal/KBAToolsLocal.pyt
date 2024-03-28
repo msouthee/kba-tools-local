@@ -3,16 +3,16 @@
 # Script Name:      KBAToolsLocal.pyt
 #
 # Script created:   2021-11-18
-# Last Updated:     2024-03-27
+# Last Updated:     2024-03-28
 # Script Author:    Meg Southee
 # Credits:          © WCS Canada / Meg Southee 2021
 #
 # Purpose:          Python Toolbox to hold the LocalKBATools to be run by regional coordinators on local computers.
 #
 # Updates:          Add parameters to handle french species names.
-#                   Added functionality to fiter additional datasets out of the InputPolygons data layer.  The filtered
-#                   datasets are listed in the KBAUtils data dictionary.
 #
+#                   Added functionality to generate soutput datasets for seven subsets of data from the InputPolygons.
+#                   The full list of filtered datasets are listed in the KBAUtils data dictionary.
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Import libraries and modules
