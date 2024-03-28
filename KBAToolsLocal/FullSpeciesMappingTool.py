@@ -109,9 +109,11 @@ class Tool:
                 # Check if the current layer is the EO_Polygon layer
                 if ft_type == "EO_Polygon":
 
-                    # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
+                    # Apply custom symbology
                     sym = new_lyr.symbology
-                    sym.renderer.symbol.applySymbolFromGallery("EO Polygon")
+                    sym.renderer.symbol.color = {'RGB': [0, 112, 255, 30]}
+                    sym.renderer.symbol.outlineColor = {'RGB': [10, 112, 255, 100]}
+                    sym.renderer.symbol.outlineWidth = 2
                     new_lyr.symbology = sym
 
                 else:
@@ -167,9 +169,11 @@ class Tool:
                 new_lyr = m.listLayers(lyr_name)[0]
                 new_lyr.visible = False  # Turn off the visibility for the new layer
 
-                # Apply new symbology from gallery (YOU MUST LOAD THE WCSC_KBA_STYLE TO THE PROJECT FROM PORTAL)
+                # Apply custom symbology
                 sym = new_lyr.symbology
-                sym.renderer.symbol.applySymbolFromGallery("Input Polygon")
+                sym.renderer.symbol.color = {'RGB': [56, 168, 0, 30]}
+                sym.renderer.symbol.outlineColor = {'RGB': [56, 168, 0, 100]}
+                sym.renderer.symbol.outlineWidth = 2
                 new_lyr.symbology = sym
 
             else:
@@ -181,12 +185,17 @@ class Tool:
             raise KBAExceptions.SpeciesDataError
 
     # Define a function to create the data layers for the filtered datasets [ECCC/IUCN/WCSC/COSEWIC MAPS]
-    def create_range_lyr(m, grp_lyr, speciesid_tuple, map_type, inputdatasetid_list, infra_exists):
+    def create_range_lyr(m, grp_lyr, speciesid_tuple, map_dict, inputdatasetid_list, infra_exists):
         # arcpy.AddMessage("Run create_range_lyr function for {}.".format(range_type))
 
         # Check that the InputPolygon layer is loaded and that there are data records for the species
         if len(m.listLayers("InputPolygon")) > 0 and len(inputdatasetid_list) > 0:
             lyr = m.listLayers("InputPolygon")[0]
+
+            # Unpack the dictionary
+            current_layer_name = map_dict[0]
+            fill_rgb = map_dict[2]
+            outline_rgb = map_dict[3]
 
             # Convert the inputdatasetid_list into string variable separated by commas for use in the SQL statement
             inputdatasetid_list_as_string = ', '.join(str(i) for i in inputdatasetid_list)
@@ -194,7 +203,7 @@ class Tool:
             # Assign naming convention in TOC based on infra parameter:
             if infra_exists is True:
                 # Specify naming conventions to include infraspecies
-                lyr_name = "{} {}+".format(map_type, speciesid_tuple[0])
+                lyr_name = "{} {}+".format(current_layer_name, speciesid_tuple[0])
 
                 # SQL statement to select filtered InputPolygons for the species and correct dataset
                 range_sql = "speciesid IN {} And inputdatasetid IN ({})".format(speciesid_tuple,
@@ -202,7 +211,7 @@ class Tool:
 
             else:
                 # Specify naming conventions without infraspecies
-                lyr_name = "{} {}".format(map_type, speciesid_tuple[0])
+                lyr_name = "{} {}".format(current_layer_name, speciesid_tuple[0])
 
                 # SQL statement to select filtered InputPolygons for the species and correct dataset
                 range_sql = "speciesid = {} And inputdatasetid IN ({})".format(speciesid_tuple[0],
@@ -223,9 +232,11 @@ class Tool:
                 new_lyr = m.listLayers(lyr_name)[0]
                 new_lyr.visible = False  # Turn off the visibility for the new layer
 
-                # Draw the symbology based on the name of the dataset called from the dictionary
+                # Apply custom symbology
                 sym = new_lyr.symbology
-                sym.renderer.symbol.applySymbolFromGallery(map_type)  # map_type parameter is fed into function
+                sym.renderer.symbol.color = fill_rgb
+                sym.renderer.symbol.outlineColor = outline_rgb
+                sym.renderer.symbol.outlineWidth = 2
                 new_lyr.symbology = sym
 
             else:
@@ -264,8 +275,8 @@ class Tool:
                           "national_engl_name",
                           "national_fr_name"]  # Added french species names
 
-        # Load dictionary of filtered datasets (i.e., Range/AOO/EOO maps) and corresponding datasetsourceid values
-        dataset_dict = KBAUtils.filtered_data_dict
+        # Load dictionary of filtered datasets (Range/AOO/EOO maps), corresponding datasetsourceid values and symbology
+        dataset_dict = KBAUtils.symbology_dict
 
         # Empty lists to hold data values
         speciesid_list = []  # hold speciesid values for full species and infraspecies
@@ -362,30 +373,30 @@ class Tool:
                 else:
                     raise KBAExceptions.NoTableError
 
-            """Error handling to check for existence of required symbology for new data layers.."""
-            lyr = m.listLayers("InputPolygon")[0]
-            sym = lyr.symbology  # Access symbol parameters in arcpy
-
-            counter = 0
-            condition = False
-            sym_list = sym.renderer.symbol.listSymbolsFromGallery("")  # List of all symbols in the project gallery
-
-            # While statement to run through the entire sym_list and try to find the custom Input Polygon symbol
-            while not condition:
-                current_name = sym_list[counter].name  # Get the name of the current symbol
-                if current_name == "Input Polygon":
-                    condition = True  # exit the while loop after processing the statements in this clause
-                    arcpy.AddMessage("Custom WCSC-KBA-Symbology found.")
-
-                    # Update symbology for the InputPolygon layer in the SpeciesData group layer
-                    sym.renderer.symbol.applySymbolFromGallery("Input Polygon")
-                    lyr.symbology = sym
-
-                else:
-                    counter += 1  # increase the counter to move to the next item in the list
-                    if counter == len(sym_list):  # you have reached the end of the list and not found the desired sym
-                        condition = True
-                        raise KBAExceptions.SymbologyError
+            # """Error handling to check for existence of required symbology for new data layers.."""
+            # lyr = m.listLayers("InputPolygon")[0]
+            # sym = lyr.symbology  # Access symbol parameters in arcpy
+            #
+            # counter = 0
+            # condition = False
+            # sym_list = sym.renderer.symbol.listSymbolsFromGallery("")  # List of all symbols in the project gallery
+            #
+            # # While statement to run through the entire sym_list and try to find the custom Input Polygon symbol
+            # while not condition:
+            #     current_name = sym_list[counter].name  # Get the name of the current symbol
+            #     if current_name == "Input Polygon":
+            #         condition = True  # exit the while loop after processing the statements in this clause
+            #         arcpy.AddMessage("Custom WCSC-KBA-Symbology found.")
+            #
+            #         # Update symbology for the InputPolygon layer in the SpeciesData group layer
+            #         sym.renderer.symbol.applySymbolFromGallery("Input Polygon")
+            #         lyr.symbology = sym
+            #
+            #     else:
+            #         counter += 1  # increase the counter to move to the next item in the list
+            #         if counter == len(sym_list):  # you have reached the end of the list and not found the desired sym
+            #             condition = True
+            #             raise KBAExceptions.SymbologyError
 
             # # END ERROR HANDLING .....................................................................................
 
@@ -505,14 +516,14 @@ class Tool:
                 myname = dataset_dict[key][0]   # Get the name of the dataset from the dictionary
                 myvalue = dataset_dict[key][1]  # Get the datasetsourceid value from the dictionary
                 arcpy.AddMessage("Processing: {}".format(myname))
+                # arcpy.AddMessage(dataset_dict[key])
 
-                # Call the readFilteredInputDatasetID function for each of the datasets in the dictionary to generate
-                # a list of the inputdatasetid values for that dataset
+                # Call the readFilteredInputDatasetID func to generate list of inputdatasetid values for current dataset
                 id_values = KBAUtils.readFilteredInputDatasetID(myvalue)
                 # arcpy.AddMessage("InputDatasetIDs: {}".format(id_values))
 
                 # Call the create_range_lyr() function to process each of the filtered datasets as separate outputs
-                Tool.create_range_lyr(m, group_lyr, speciesid_tuple, myname, id_values, infraspecies_exist)
+                Tool.create_range_lyr(m, group_lyr, speciesid_tuple, dataset_dict[key], id_values, infraspecies_exist)
 
                 # Create a merged list of the inputdatasetids for all the filtered datasets
                 filtered_inputdatasetid_list.extend(id_values)
@@ -551,10 +562,6 @@ class Tool:
         except KBAExceptions.SpeciesDataError:
             arcpy.AddError("SpeciesData (Group Layer) does not exist. "
                            "Re-load original SpeciesData from WCSC-KBA Map Template.")
-
-        # Error handling if custom WCSC_KBA_Symbology isn't in the project
-        except KBAExceptions.SymbologyError:
-            arcpy.AddError("You need to add the WCSC_KBA_Symbology from Portal to the current Project.")
 
         # Error handling if an error occurs while using a Geoprocessing Tool in the script
         except arcpy.ExecuteError:
